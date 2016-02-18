@@ -23,6 +23,7 @@
   </head>
   <script>
 var fcs = {
+	user: "visitor",
 	addr: "{{.Addr}}",
 	last_update: "N/A",
 	ready: false,
@@ -54,6 +55,14 @@ var fcs = {
 		},
 	},
 };
+
+fcs.handleLogin = function(event) {
+	fcs.user = event.detail.username;
+	console.log("welcome "+event.detail.username);
+	console.log("event: "+JSON.stringify(event));
+	var div = document.getElementById("fcs-app");
+	div.innerHTML = "<fcs-lpc-motor-app></fcs-lpc-motor-app>";
+}
 
 fcs.uploadScriptFile = function(event) {
 }
@@ -102,7 +111,12 @@ window.onload = function() {
 
 	fcs.chan.data.onmessage = function(event) {
 		fcs.last_update = new Date();
-		document.getElementById("fcs-status-update").innerHTML=fcs.last_update.toUTCString();
+		var update = document.getElementById("fcs-status-update");
+		if (update == null) {
+			// main page, after credentials verification, not there yet...
+			return;
+		}
+		update.innerHTML=fcs.last_update.toUTCString();
 		var data = JSON.parse(event.data);
 		fcs.refreshMon(data);
 		console.log("data:"+JSON.stringify(data));
@@ -171,12 +185,15 @@ window.onload = function() {
 				break;
 		}
 	}
-	
 }
-  </script>
+	</script>
 
   
-  <body unresolved class="layout vertical center-center">
-    <fcs-lpc-motor-app></fcs-lpc-motor-app>
-  </body>
+	<body unresolved class="layout vertical center-center">
+
+		<div id="fcs-app">
+			<fcs-lpc-motor-login></fcs-lpc-motor-login>
+		</div>
+
+	</body>
 </html>

@@ -32,6 +32,37 @@
 <link rel="import" href="bower_components/polymer-flot/flot-chart.html">
 <link rel="import" href="bower_components/polymer-flot/flot-time-plugin.html">
 
+<link rel="import" href="bower_components/login-polyform/login-polyform.html">
+
+<dom-module id="fcs-lpc-motor-login">
+	<template>
+		<style>
+    :host {
+      display: block;
+      box-sizing: border-box;
+      text-align: center;
+      margin: 5px;
+      max-width: 250px;
+      min-width: 200px;
+    }
+		</style>
+
+		<login-polyform on-login="fcs_handle_login" username="visitor">
+			<img avatar src="http://www.lsst.org/sites/default/files/logo_1.png" alt="avatar"/>
+		</login-polyform>
+	</template>
+
+	<script>
+	Polymer({
+		is:"fcs-lpc-motor-login",
+		fcs_handle_login: function(event) {
+			return fcs.handleLogin(event);
+		},
+	});
+	</script>
+</dom-module>
+
+
 <dom-module id="fcs-lpc-motor-app">
 	<style is="custom-style">
 		:host {
@@ -108,7 +139,10 @@
 
 			<div class="content">
 				<paper-drawer-panel>
-					<div drawer class="center">Motors Summary
+					<div drawer class="center">
+						<div>User: <span id="fcs-user" color="red">N/A</span></div>
+						<hr>
+						Motors Summary
 						<br>
 						<hr>
 						<paper-menu>
@@ -147,6 +181,10 @@
 		is:"fcs-lpc-motor-app",
 		properties: {
 			selected: {type: Number, value: 0},
+		},
+		ready: function(event) {
+			var user = document.getElementById("fcs-user");
+			user.innerHTML = fcs.user;
 		},
 	});
 	</script>
