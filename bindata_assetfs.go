@@ -77,7 +77,7 @@ func bower_json() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindata_file_info{name: "bower.json", size: 1534, mode: os.FileMode(420), modTime: time.Unix(1455698209, 0)}
+	info := bindata_file_info{name: "bower.json", size: 1591, mode: os.FileMode(420), modTime: time.Unix(1455806862, 0)}
 	a := &asset{bytes: bytes, info:  info}
 	return a, nil
 }
