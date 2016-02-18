@@ -1,0 +1,28 @@
+{
+  "name": "polymer-flot",
+  "version": "0.3.0",
+  "description": "Element wrapper for the Flot library",
+  "private": true,
+  "authors": [
+    "Riyad Preukschas <riyad@informatik.uni-bremen.de>"
+  ],
+  "keywords": [
+    "web-components",
+    "polymer",
+    "jquery",
+    "flot"
+  ],
+  "main": "flot-chart.html",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/riyad/polymer-flot.git"
+  },
+  "license": "https://github.com/riyad/polymer-flot/blob/master/LICENSE.txt",
+  "homepage": "https://riyad.github.io/polymer-flot/",
+  "ignore": [],
+  "dependencies": {
+    "flot": "flot/flot#^0.8.3",
+    "polymer": "Polymer/polymer#^1.2.0"
+  },
+  "devDependencies": {}
+}

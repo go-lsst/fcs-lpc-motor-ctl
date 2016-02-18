@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 The go-lsst Authors. All rights reserved.
+  -- Use of this source code is governed by a BSD-style
+  -- license that can be found in the LICENSE file.
+  -->
+
+<link rel="import" href="bower_components/polymer/polymer.html">
+
+<script src="bower_components/jquery/dist/jquery.js"></script>
+
+<link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout.html">
+
+<link rel="import" href="bower_components/iron-autogrow-textarea/iron-autogrow-textarea.html">
+<link rel="import" href="bower_components/iron-form/iron-form.html">
+<link rel="import" href="bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="bower_components/iron-pages/iron-pages.html">
+
+<link rel="import" href="bower_components/paper-button/paper-button.html">
+<link rel="import" href="bower_components/paper-card/paper-card.html">
+<link rel="import" href="bower_components/paper-drawer-panel/paper-drawer-panel.html">
+<link rel="import" href="bower_components/paper-icon-button/paper-icon-button.html">
+<link rel="import" href="bower_components/paper-input/paper-input.html">
+<link rel="import" href="bower_components/paper-input/paper-textarea.html">
+<link rel="import" href="bower_components/paper-item/paper-item.html">
+<link rel="import" href="bower_components/paper-material/paper-material.html">
+<link rel="import" href="bower_components/paper-scroll-header-panel/paper-scroll-header-panel.html">
+<link rel="import" href="bower_components/paper-slider/paper-slider.html">
+<link rel="import" href="bower_components/paper-tabs/paper-tabs.html">
+<link rel="import" href="bower_components/paper-toggle-button/paper-toggle-button.html">
+<link rel="import" href="bower_components/paper-toolbar/paper-toolbar.html">
+
+<link rel="import" href="bower_components/polymer-flot/flot-chart.html">
+<link rel="import" href="bower_components/polymer-flot/flot-time-plugin.html">
+
+<dom-module id="fcs-lpc-motor-app">
+	<style is="custom-style">
+		:host {
+			width: 100%;
+			height: 100%;
+			margin: 0 auto;
+			box-sizing: border-box;
+			@apply(--layout-horizontal);
+		}
+
+		body {
+			padding: 40px;
+		}
+
+		paper-scroll-header-panel {
+			position:absolute;
+			top:0;
+			right:0;
+			bottom: 0;
+			left: 0;
+			background-color: var(--paper-grey-200, #eee);
+		}
+
+		paper-scroll-header-panel .content {
+			padding: 8px;
+		}
+
+		paper-tabs {
+			background-color: lightgray;
+			--paper-tabs-selection-bar-color: red;
+		}
+
+		paper-toolbar {
+			background-color: black;
+		}
+
+		paper-toolbar .title {
+			margin: 0 8px;
+		}
+
+		.spacer {
+			@apply(--layout-flex);
+		}
+
+		.center {
+			text-align: center;
+		}
+
+		.main-panel {
+			overflow-y: scroll;
+		}
+
+		/*
+		.vertical-section {
+			margin: 0 24px 24px 24px;
+		}
+
+		.vertical-section-container {
+			@apply(--layout-vertical);
+			@apply(--center-justified);
+		}
+		*/
+
+	</style>
+
+	<template>
+
+		<paper-scroll-header-panel fixed class="flex">
+
+			<paper-toolbar>
+				<paper-icon-button icon="menu" paper-drawer-toggle></paper-icon-button>
+				<div class="spacer title center">LSST FCS Motors</div>
+			</paper-toolbar>
+
+			<div class="content">
+				<paper-drawer-panel>
+					<div drawer class="center">Motors Summary
+						<br>
+						<hr>
+						<paper-menu>
+							<paper-item>Motor-0: 134.158.125.223:502</paper-item>
+							<paper-item>Motor-1: 134.158.125.224:502</paper-item>
+						</paper-menu>
+
+						<fcs-motors-status></fcs-motors-status>
+					</div> 
+					<div main class="main-panel">
+						<paper-tabs selected="{{selected}}" fixed>
+							<paper-tab>Commands</paper-tab>
+							<paper-tab>Expert</paper-tab>
+						</paper-tabs>
+
+						<iron-pages selected="{{selected}}">
+							<div class="layout vertical center-center">
+								<div class="layout horizontal center-center">
+									<fcs-motors-ctl></fcs-motors-ctl>
+									<fcs-motors-scripting></fcs-motors-scripting>
+								</div>
+								<br>
+								<fcs-motors-monitor></fcs-motors-monitor>
+							</div>
+							<div>Experts ONLY</div>
+						</iron-pages>
+					</div>
+				</paper-drawer-panel>
+			</div>
+
+		</paper-scroll-header-panel>
+	</template>
+
+	<script>
+	Polymer({
+		is:"fcs-lpc-motor-app",
+		properties: {
+			selected: {type: Number, value: 0},
+		},
+	});
+	</script>
+
+</dom-module>
+
+<dom-module id="fcs-motors-status">
+
+<style is="custom-style">
+paper-button.green {
+	background-color: var(--paper-red-500);
+	color: white;
+}
+
+paper-button.green[active] {
+	background-color: var(--paper-green-500);
+}
+
+paper-card {
+	padding: 8px;
+	margin-left: 8px;
+	margin-right: 8px;
+	margin-top: 8px;
+}
+
+th {
+	font-weight: normal;
+}
+</style>
+
+<template>
+	<paper-card heading="FCS Motors Status" elevation="2">
+		<div class="card-content">
+			<table>
+				<tbody>
+					<tr><th style="text-align:left">Motors</th><th><paper-button id="fcs-status-ready" toggles disabled raised class="fcs-switch green">Ready</paper-button></th></tr>
+					<tr><th style="text-align:left">Rotation Direction</th><th><paper-button id="fcs-status-rotation-dir" raised disabled class="left-align">N/A</paper-button></th></tr>
+					<tr><th style="text-align:left">RPMs</th><th><paper-button id="fcs-status-rpms" raised disabled class="left-align">N/A</paper-button></th></tr>
+					<tr><th style="text-align:left">Angular Position</th><th><paper-button id="fcs-status-angle" raised disabled class="left-align">N/A</paper-button></th></tr>
+					<tr><th style="text-align:left">Temperature</th><th><paper-button id="fcs-status-temp-0" raised disabled suffix="C" class="left-align">N/A</paper-button></th></tr>
+					<tr><th style="text-align:left">Temperature</th><th><paper-button id="fcs-status-temp-1" raised disabled suffix="C" class="left-align">N/A</paper-button></th></tr>
+					<tr><th style="text-align:left">Temperature</th><th><paper-button id="fcs-status-temp-2" raised disabled suffix="C" class="left-align">N/A</paper-button></th></tr>
+					<tr><th style="text-align:left">Temperature</th><th><paper-button id="fcs-status-temp-3" raised disabled suffix="C" class="left-align">N/A</paper-button></th></tr>
+				</tbody>
+			</table>
+			<br>
+			Last status update:<br>
+		   	<span id="fcs-status-update">N/A<span>
+		</div>
+	</paper-card>
+</template>
+
+<script>
+Polymer({
+	is:"fcs-motors-status",
+});
+</script>
+
+</dom-module>
+
+<!--+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	FCS motors controls
+-->
+
+<dom-module id="fcs-motors-ctl">
+	<template>
+		<style is="custom-style">
+paper-slider {
+	--paper-slider-input: {
+		width: 100px;
+	};
+}
+
+paper-card {
+	padding: 8px;
+	margin-left: 8px;
+	margin-right: 8px;
+	margin-top: 8px;
+}
+
+paper-button {
+	height: 41.375px;
+}
+
+paper-button[raised].colorful {
+	background-color: #4285f4;
+	color: #fff;
+	height: 41.375px;
+}
+
+paper-button.fcs-switch {
+	--paper-button-ink-color: var(--paper-pink-a200);
+	--paper-button-flat-keyboard-focus: {
+		background-color: var(--paper-pink-a200);
+		color: white !important;
+	};
+	--paper-button-raised-keyboard-focus: {
+		background-color: var(--paper-pink-a200) !important;
+		color: white !important;
+	};
+}
+
+paper-icon-button {
+	--paper-icon-button-ink-color: white;
+}
+
+		</style>
+
+		<paper-card heading="FCS Motors Controls" elevation="2">
+			<div class="card-content">
+				<div><paper-toggle-button id="fcs-ctl-ready" onclick="fcs.sendCommand({name:'ready'})" active=false>Motors ready</paper-toggle-button></div>
+				<br>
+				<div>
+					<div>Rotation Direction</div>
+					<div class="layout horizontal">
+						<paper-slider id="fcs-ctl-rotation-direction-slider" pin value="0" min="-1" max="+1" disabled editable></paper-slider>
+						<paper-button disabled class="colorful" onclick="fcs.sendCommand({name:'rotation-direction'})" id="fcs-ctl-rotation-direction-submit">Submit</paper-button>
+					</div>
+				</div>
+
+				<div>
+					<div>RPMs</div>
+					<div class="layout horizontal">
+						<paper-slider id="fcs-ctl-rpm-slider" pin value="0" min="0" max="3000" disabled editable></paper-slider>
+						<paper-button disabled class="colorful" onclick="fcs.sendCommand({name:'rpm'})" id="fcs-ctl-rpm-submit">Submit</paper-button>
+					</div>
+				</div>
+
+				<div>
+					<div>Angular Position</div>
+					<div class="layout horizontal">
+						<paper-slider id="fcs-ctl-angle-position-slider" pin value="0" min="-180" max="+180" disabled editable></paper-slider>
+						<paper-button disabled class="colorful" onclick="fcs.sendCommand({name:'angle-position'})" id="fcs-ctl-angle-position-submit">Submit</paper-button>
+					</div>
+				</div>
+			</div>
+		</paper-card>
+	</template>
+
+	<script>
+Polymer({
+	is: "fcs-motors-ctl",
+});
+	</script>
+
+</dom-module>
+
+<dom-module id="fcs-motors-scripting">
+	<template>
+		<style>
+:host {
+	box-sizing: border-box;
+}
+
+paper-card {
+	padding: 8px;
+	margin-left: 8px;
+	margin-right: 8px;
+	margin-top: 8px;
+}
+
+paper-button[raised].colorful {
+	background-color: #4285f4;
+	color: #fff;
+}
+
+input {
+      width: 100%;
+      box-sizing: border-box;
+}
+
+paper-input {
+	display: inline-block;
+	box-sizing: border-box;
+}
+
+paper-textarea {
+	box-sizing: border-box;
+	border: 1px solid #eee;
+}
+
+iron-autogrow-textarea {
+	width: 200px;
+	box-sizing: border-box;
+}
+
+textarea {
+	border:1px solid #eee;
+}
+
+		</style>
+
+		<paper-card heading="FCS Motors Scripting" elevation="2">
+			<div class="card-content">
+				<div>
+					<h4>Input File</h4>
+					<form is="iron-form" id="fcs-upload-script-file-form" method="post" action="/upload-script-file" enctype="multipart/form-data">
+						<paper-input type="file" name="upload-file" required noLabelFloat size=20></paper-input>
+						<paper-input type="hidden" name="token" value="{{token}}" required></paper-input>
+						<paper-button raised class="colorful" onclick="fcs.uploadScriptFile(event)">Submit</paper-button>
+					</form>
+				</div>
+				<br>
+				<div>
+					<h4>Commands</h4>
+					<form is="iron-form" id="fcs-upload-commands-form" method="get" action="/upload-commands">
+						<paper-textarea label="fcs-commands" max-rows=4 rows=4 always-float-label placeholder="get 0.8.15"></paper-textarea>
+						<paper-button raised class="colorful" onclick="fcs.uploadCommands(event)">Submit</paper-button>
+						<paper-button raised class="colorful" onclick="fcs.resetCommands(event)">Reset</paper-button>
+					</form>
+				</div>
+			</div>
+		</paper-card>
+	</template>
+
+	<script>
+Polymer({
+	is: "fcs-motors-scripting",
+	properties: {
+		token: {type: String, value: ""},
+	},
+});
+	</script>
+</dom-module>
+
+<!--+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	FCS motors monitors
+-->
+
+<dom-module id=fcs-motors-monitor>
+	<template>
+		<style>
+paper-card {
+	padding: 8px;
+	margin-left: 8px;
+	margin-right: 8px;
+	margin-top: 8px;
+}
+
+paper-button[raised].colorful {
+	background-color: #4285f4;
+	color: #fff;
+}
+
+.chart {
+	width: 400px;
+	height: 200px;
+}
+
+flot-chart {
+	min-width: 800px;
+	height: 400px;
+	margin: 0 auto;
+}
+		</style>
+
+		<paper-card heading="FCS Motors Monitor" elevation="2">
+			<div class="card-content">
+				<div>
+					<h4>Temperature</h4>
+					<flot-chart id="fcs-mon-temperature"></flot-chart>
+				</div>
+
+				<div>
+					<h4>Angular position</h4>
+					<flot-chart id="fcs-mon-position"></flot-chart>
+				</div>
+
+				<div>
+					<h4>RPMs</h4>
+					<flot-chart id="fcs-mon-rpms"></flot-chart>
+				</div>
+
+
+			</div>
+		</paper-card>
+	</template>
+
+	<script>
+Polymer({
+	is: "fcs-motors-monitor",
+});
+
+window.onload = function() {
+}
+	</script>
+</dom-module>
+
+

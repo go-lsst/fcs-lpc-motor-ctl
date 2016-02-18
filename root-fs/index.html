@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<!-- Copyright 2016 The go-lsst Authors. All rights reserved.
+  -- Use of this source code is governed by a BSD-style
+  -- license that can be found in the LICENSE file.
+  -->
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+    <meta charset="utf-8">
+    <title>FCS LPC Testbench</title>
+    <script src="bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+    <link rel="import" href="bower_components/paper-styles/paper-styles-classes.html">
+    <link rel="import" href="fcs-lpc-motor.html">
+    <style>
+      html {
+        overflow-y: auto;
+      }
+      body {
+        font-family: 'Roboto', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        font-weight: 300;
+      }
+    </style>
+  </head>
+  <script>
+var fcs = {
+	addr: "{{.Addr}}",
+	last_update: "N/A",
+	ready: false,
+	chan: {
+		cmds: null,
+		data: null,
+	},
+	mon: {
+		temps: [[],[],[],[]],
+		position: [],
+		rpms: [],
+	},
+	plot_options: {
+		legend: {
+			position: "nw",
+			noColumns: 2,
+			backgroundOpacity: 0.2
+		},
+		xaxis: {
+			mode: "time",
+			timezone: "browser",
+			timeformat: "%Y/%m/%d\n%H:%M:%S"
+		},
+		yaxis: {
+			position: "right",
+		},
+		selection: {
+			mode: "x"
+		},
+	},
+};
+
+fcs.uploadScriptFile = function(event) {
+}
+
+fcs.uploadCommands = function(event) {
+}
+
+fcs.resetCommands = function(event) {
+	Polymer.dom(event).localTarget.parentElement.reset();
+}
+
+fcs.sendCommand = function(event) {
+	var data = {
+		type: "ctl",
+		name: event.name,
+	};
+	if (data.name == "ready") {
+		// yes. the logic of 'checked' is inversed. but just here.
+		var ready = !Boolean(document.getElementById("fcs-ctl-"+event.name).checked);
+		data.value = Number(ready);
+	} else {
+		data.value = Number(document.getElementById("fcs-ctl-"+event.name+"-slider").value);
+	}
+	console.log("sending command: "+JSON.stringify(data));
+
+	fcs.chan.cmds.send(JSON.stringify(data));
+}
+
+fcs.refreshMon = function(data) {
+
+	for (var i = 0; i < data.temps.length; i++) {
+		fcs.mon.temps[i].push([fcs.last_update.getTime(), data.temps[i]]);
+	}
+	fcs.mon.position.push([fcs.last_update.getTime(), data.angle]);
+	fcs.mon.rpms.push([fcs.last_update.getTime(), data.rpms]);
+
+	$("#fcs-mon-temperature").prop("options", fcs.plot_options);
+	$("#fcs-mon-position").prop("options", fcs.plot_options);
+	$("#fcs-mon-rpms").prop("options", fcs.plot_options);
+
+	$("#fcs-mon-temperature").prop("data", [fcs.mon.temps[0], fcs.mon.temps[1], fcs.mon.temps[2], fcs.mon.temps[3]]);
+	$("#fcs-mon-position").prop("data", [fcs.mon.position]);
+	$("#fcs-mon-rpms").prop("data", [fcs.mon.rpms]);
+}
+
+window.onload = function() {
+	fcs.chan.data = new WebSocket("ws://" + fcs.addr + "/data");
+	fcs.chan.cmds = new WebSocket("ws://" + fcs.addr + "/cmds");
+
+	fcs.chan.data.onopen = function() {}
+	fcs.chan.data.onclose = function() {}
+
+	fcs.chan.data.onmessage = function(event) {
+		fcs.last_update = new Date();
+		document.getElementById("fcs-status-update").innerHTML=fcs.last_update.toUTCString();
+		var data = JSON.parse(event.data);
+		fcs.refreshMon(data);
+		console.log("data:"+JSON.stringify(data));
+		
+		document.getElementById("fcs-status-ready").active = data.ready;
+		document.getElementById("fcs-status-rotation-dir").innerHTML = data.rotation_direction;
+		document.getElementById("fcs-status-rpms").innerHTML = data.rpms;
+		document.getElementById("fcs-status-angle").innerHTML = data.angle;
+		for (var i=0; i<data.temps.length;i++) {
+			document.getElementById("fcs-status-temp-"+i).innerHTML = data.temps[i]+" °C";
+		}
+
+		if (fcs.ready != data.ready) {
+			fcs.ready = data.ready;
+			document.getElementById("fcs-ctl-ready").checked = fcs.ready;
+			var ids = [
+				"fcs-ctl-rotation-direction",
+				"fcs-ctl-rpm",
+				"fcs-ctl-angle-position",
+			];
+			if (fcs.ready) {
+				for (var i = 0; i < ids.length; i++) {
+					var id = ids[i];
+					document.getElementById(id+"-slider").disabled = false;
+					document.getElementById(id+"-submit").disabled = false;
+					document.getElementById(id+"-submit").raised = true;
+				}
+			} else {
+				for (var i = 0; i < ids.length; i++) {
+					var id = ids[i];
+					document.getElementById(id+"-slider").disabled = true;
+					document.getElementById(id+"-submit").disabled = true;
+					document.getElementById(id+"-submit").raised = false;
+				}
+			}
+		}
+	}
+
+	fcs.chan.cmds.onopen = function() {}
+	fcs.chan.cmds.onclose = function() {}
+	fcs.chan.cmds.onmessage = function(event) {
+		var obj = JSON.parse(event.data);
+		var id = obj.id;
+		console.log("received cmd: "+JSON.stringify(obj));
+		switch (obj["stage"]) {
+			case "gen-done":
+				document.getElementById("sim-spinner").active = false;
+				if (obj["err"] != null) {
+					document.getElementById("snfusion-gen-"+snfusion_id).innerHTML = JSON.stringify(obj["err"]);
+				}
+				if (obj["msg"] != null) {
+					var text = "<pre style=\"text-align: left\">";
+					var msg = obj.msg.split("\n");
+					for (i = 0; i < msg.length; i++) { 
+						text += msg[i] + "<br>";
+					}
+					text += "</pre>"
+					document.getElementById("snfusion-gen-"+snfusion_id).innerHTML = text;
+				}
+				break;
+			case "plot-done":
+				document.getElementById("snfusion-plot-"+snfusion_id).innerHTML = obj["svg"];
+				break;
+			case "zip-done":
+				var div = document.getElementById("snfusion-report-"+snfusion_id);
+				var dl = document.createElement("form");
+				dl.id = "snfusion-submit-form-" + id;
+				dl.method="post";
+				dl.action="http://{{.Addr}}/download?file="+encodeURI(obj.href);
+				dl.innerHTML = "<paper-button raised onclick=\"submitForm("+id+")\" class=\"colorful\" id=\"snfusion-download-"+snfusion_id+"\">Download ZIP<br>(Simulation - "+id+")</paper-button>";
+				div.appendChild(dl); 
+				break;
+		}
+	}
+	
+}
+  </script>
+
+  
+  <body unresolved class="layout vertical center-center">
+    <fcs-lpc-motor-app></fcs-lpc-motor-app>
+  </body>
+</html>

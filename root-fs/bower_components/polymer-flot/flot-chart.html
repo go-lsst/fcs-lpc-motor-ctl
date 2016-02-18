@@ -1,0 +1,56 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="flot-import.html">
+
+<dom-module id="flot-chart">
+  <style>
+    :host,
+    #chart {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+  </style>
+  <template>
+    <div id="chart"></div>
+  </template>
+</dom-module>
+
+<script>
+  "use strict";
+
+  Polymer({
+    is: "flot-chart",
+
+    properties: {
+      data: {
+        type: Object,
+        value: function() { return []; },
+      },
+      options: {
+        type: Object,
+        value: function() { return {}; },
+      },
+    },
+
+    observers: [
+      '_loadData(data, options)'
+    ],
+
+    _loadData: function (data, options) {
+      this.drawChart();
+    },
+
+    drawChart: function() {
+      if (!this.data) {
+          console.log("no data, not drawing anything");
+          return;
+      }
+      if ($(this).width() == 0 || $(this).height() == 0) {
+        console.log("width or height is 0, not drawing anything");
+        return;
+      }
+
+      $(this.$.chart).plot(this.data, this.options);
+    },
+  });
+</script>

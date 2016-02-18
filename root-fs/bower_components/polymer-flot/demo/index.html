@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Polymer Flot Example: Basic Usage</title>
+    <link href="http://www.flotcharts.org/flot/examples/examples.css" rel="stylesheet" type="text/css">
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+    <link rel="import" href="../flot-chart.html">
+
+    <script type="text/javascript">
+      $(function() {
+
+        var d1 = [];
+        for (var i = 0; i < 14; i += 0.5) {
+          d1.push([i, Math.sin(i)]);
+        }
+
+        var d2 = [[0, 3], [4, 8], [8, 5], [9, 13]];
+
+        // A null signifies separate line segments
+
+        var d3 = [[0, 12], [7, 12], null, [7, 2.5], [12, 2.5]];
+
+        $("#placeholder").prop("data", [ d1, d2, d3 ]);
+      });
+      </script>
+  </head>
+  <body>
+    <div id="header">
+      <h2>Basic Usage</h2>
+    </div>
+
+    <div id="content">
+
+      <div class="demo-container">
+        <flot-chart id="placeholder" class="demo-placeholder"></flot-chart>
+      </div>
+
+      <p>You don't have to do much to get an attractive plot.  Create a placeholder, make sure it has dimensions (so Flot knows at what size to draw the plot), then call the plot function with your data.</p>
+
+      <p>The axes are automatically scaled.</p>
+
+    </div>
+  </body>
+</html>
