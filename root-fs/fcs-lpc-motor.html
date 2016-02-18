@@ -257,7 +257,13 @@ paper-icon-button {
 
 		<paper-card heading="FCS Motors Controls" elevation="2">
 			<div class="card-content">
-				<div><paper-toggle-button id="fcs-ctl-ready" onclick="fcs.sendCommand({name:'ready'})" active=false>Motors ready</paper-toggle-button></div>
+				<div>
+					<div>Motors ready</div>
+					<div class="layout horizontal">
+						<paper-slider id="fcs-ctl-ready-slider" pin value="0" min="0" max="+1" editable></paper-slider>
+						<paper-button raised class="colorful" onclick="fcs.sendCommand({name:'ready'})" id="fcs-ctl-ready-submit">Submit</paper-button>
+					</div>
+				</div>
 				<br>
 				<div>
 					<div>Rotation Direction</div>

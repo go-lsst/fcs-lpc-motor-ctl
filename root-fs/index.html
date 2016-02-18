@@ -70,13 +70,7 @@ fcs.sendCommand = function(event) {
 		type: "ctl",
 		name: event.name,
 	};
-	if (data.name == "ready") {
-		// yes. the logic of 'checked' is inversed. but just here.
-		var ready = !Boolean(document.getElementById("fcs-ctl-"+event.name).checked);
-		data.value = Number(ready);
-	} else {
-		data.value = Number(document.getElementById("fcs-ctl-"+event.name+"-slider").value);
-	}
+	data.value = Number(document.getElementById("fcs-ctl-"+event.name+"-slider").value);
 	console.log("sending command: "+JSON.stringify(data));
 
 	fcs.chan.cmds.send(JSON.stringify(data));
@@ -123,7 +117,7 @@ window.onload = function() {
 
 		if (fcs.ready != data.ready) {
 			fcs.ready = data.ready;
-			document.getElementById("fcs-ctl-ready").checked = fcs.ready;
+			document.getElementById("fcs-ctl-ready-slider").value = fcs.ready;
 			var ids = [
 				"fcs-ctl-rotation-direction",
 				"fcs-ctl-rpm",
