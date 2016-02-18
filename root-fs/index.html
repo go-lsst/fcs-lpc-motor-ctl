@@ -123,20 +123,14 @@ window.onload = function() {
 				"fcs-ctl-rpm",
 				"fcs-ctl-angle-position",
 			];
-			if (fcs.ready) {
-				for (var i = 0; i < ids.length; i++) {
-					var id = ids[i];
-					document.getElementById(id+"-slider").disabled = false;
-					document.getElementById(id+"-submit").disabled = false;
-					document.getElementById(id+"-submit").raised = true;
-				}
-			} else {
-				for (var i = 0; i < ids.length; i++) {
-					var id = ids[i];
-					document.getElementById(id+"-slider").disabled = true;
-					document.getElementById(id+"-submit").disabled = true;
-					document.getElementById(id+"-submit").raised = false;
-				}
+			var disabled = !fcs.ready;
+			var raised = fcs.ready;
+
+			for (var i = 0; i < ids.length; i++) {
+				var id = ids[i];
+				document.getElementById(id+"-slider").disabled = disabled;
+				document.getElementById(id+"-submit").disabled = disabled;
+				document.getElementById(id+"-submit").raised = raised;
 			}
 		}
 	}
