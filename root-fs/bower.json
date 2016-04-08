@@ -37,6 +37,6 @@
     "polymer-flot": "riyad/polymer-flot",
     "iron-flex-layout": "PolymerElements/iron-flex-layout#^1.2.3",
     "login-polyform": "hourliert/login-polyform#^0.1.0",
-    "paper-toast": "PolymerElements/paper-toast#^1.2.2"
+    "paper-dialog": "PolymerElements/paper-dialog#^1.0.4"
   }
 }
