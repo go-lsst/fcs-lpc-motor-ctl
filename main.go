@@ -35,6 +35,8 @@ const (
 var (
 	codec    = binary.BigEndian
 	addrFlag = flag.String("addr", "", "address:port to serve web-app")
+
+	errMotorOffline = fcsError{1, "fcs: motor OFFLINE"}
 )
 
 func newParameter(name string) m702.Parameter {
@@ -343,7 +345,7 @@ cmdLoop:
 			codec.PutUint32(params[0].Data[:], uint32(req.Value))
 
 		case "angle-position":
-			websocket.JSON.Send(c.ws, cmdReply{Err: fmt.Errorf("not supported"), Req: req})
+			websocket.JSON.Send(c.ws, cmdReply{Err: "not supported", Req: req})
 			continue
 
 		default:
@@ -352,6 +354,18 @@ cmdLoop:
 		}
 
 		log.Printf("sending command %v to motor...\n", params)
+		{
+			conn, err := net.DialTimeout("tcp", c.srv.Motors[0], 1*time.Second)
+			if err != nil || conn == nil {
+				websocket.JSON.Send(c.ws, cmdReply{Err: errMotorOffline.Error(), Req: req})
+				if conn != nil {
+					conn.Close()
+				}
+				continue
+			}
+			conn.Close()
+		}
+
 		for _, p := range params {
 			err = motor.WriteParam(p)
 			if err != nil {
@@ -359,11 +373,11 @@ cmdLoop:
 				if err == io.EOF && nretries < maxRetries {
 					goto retry
 				}
-				websocket.JSON.Send(c.ws, cmdReply{Err: err, Req: req})
+				websocket.JSON.Send(c.ws, cmdReply{Err: err.Error(), Req: req})
 				goto cmdLoop
 			}
 		}
-		websocket.JSON.Send(c.ws, cmdReply{Err: nil, Req: req})
+		websocket.JSON.Send(c.ws, cmdReply{Err: "", Req: req})
 	}
 }
 
@@ -414,7 +428,7 @@ type cmdRequest struct {
 }
 
 type cmdReply struct {
-	Err error      `json:"err"`
+	Err string     `json:"err"`
 	Req cmdRequest `json:"req"`
 }
 
@@ -442,4 +456,17 @@ func getHostIP() string {
 
 	log.Fatalf("could not infer host IP")
 	return ""
+}
+
+type fcsError struct {
+	Code int    `json:"code"`
+	Msg  string `json:"msg"`
+}
+
+func (e fcsError) Error() string {
+	return fmt.Sprintf("[%03d]: %s", e.Code, e.Msg)
+}
+
+func (e fcsError) String() string {
+	return e.Error()
 }

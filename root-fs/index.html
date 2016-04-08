@@ -118,7 +118,9 @@ window.onload = function() {
 		}
 		update.innerHTML=fcs.last_update.toUTCString();
 		var data = JSON.parse(event.data);
-		fcs.refreshMon(data);
+		if (data.online) {
+			fcs.refreshMon(data);
+		}
 		console.log("data:"+JSON.stringify(data));
 		
 		document.getElementById("fcs-status-online").active = data.online;
@@ -156,6 +158,9 @@ window.onload = function() {
 		var obj = JSON.parse(event.data);
 		var id = obj.id;
 		console.log("received cmd: "+JSON.stringify(obj));
+		if (obj["err"] != "") {
+			document.querySelector("fcs-motors-alert").displayError(obj);
+		}
 		switch (obj["stage"]) {
 			case "gen-done":
 				document.getElementById("sim-spinner").active = false;

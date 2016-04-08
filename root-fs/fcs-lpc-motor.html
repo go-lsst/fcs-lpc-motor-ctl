@@ -17,6 +17,7 @@
 
 <link rel="import" href="bower_components/paper-button/paper-button.html">
 <link rel="import" href="bower_components/paper-card/paper-card.html">
+<link rel="import" href="bower_components/paper-dialog/paper-dialog.html">
 <link rel="import" href="bower_components/paper-drawer-panel/paper-drawer-panel.html">
 <link rel="import" href="bower_components/paper-icon-button/paper-icon-button.html">
 <link rel="import" href="bower_components/paper-input/paper-input.html">
@@ -137,7 +138,7 @@
 				<div class="spacer title center">LSST FCS Motors</div>
 			</paper-toolbar>
 
-			<div class="content">
+			<div class="content" id="fcs-main-container">
 				<paper-drawer-panel>
 					<div drawer class="center">
 						<div>User: <span id="fcs-user" color="red">N/A</span></div>
@@ -163,6 +164,7 @@
 								<div class="layout horizontal center-center">
 									<fcs-motors-ctl></fcs-motors-ctl>
 									<fcs-motors-scripting></fcs-motors-scripting>
+									<fcs-motors-alert></fcs-motors-alert>
 								</div>
 								<br>
 								<div class="layout horizontal center-center">
@@ -415,6 +417,39 @@ Polymer({
 	is: "fcs-motors-scripting",
 	properties: {
 		token: {type: String, value: ""},
+	},
+});
+	</script>
+</dom-module>
+
+<!--
+	FCS motors command errors
+	<style is="custom-style">
+-->
+
+<dom-module id="fcs-motors-alert">
+	<template>
+		<style>
+paper-dialog {
+	background-color: red;
+	color: black;
+	width: 50%;
+}
+		</style>
+		<paper-dialog id="fcs-motors-errors"></paper-dialog>
+	</template>
+	<script>
+Polymer({
+	is: "fcs-motors-alert",
+	properties: {
+		token: {type: String, value: ""},
+	},
+	displayError: function(obj) {
+		var req = JSON.stringify(obj.req);
+		var err = obj.err;
+		var node = document.querySelector('#fcs-motors-errors');
+		node.innerHTML = "<h2>Error</h2><div>"+err+"</div><br><br><h2>Request</h2><div>"+req+"</div>";
+		node.open();
 	},
 });
 	</script>
