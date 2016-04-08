@@ -21,17 +21,16 @@
   "ignore": [],
   "dependencies": {
     "flot": "flot/flot#^0.8.3",
-    "polymer": "Polymer/polymer#^1.2.0"
+    "polymer": "Polymer/polymer#^1.4.0"
   },
   "devDependencies": {},
-  "_release": "a78473a7e2",
+  "_release": "171b7bb4ce",
   "_resolution": {
     "type": "branch",
     "branch": "master",
-    "commit": "a78473a7e2e08cc418bee96d479d13457de589c8"
+    "commit": "171b7bb4ce7b52f43aa39775d5169621c4f79673"
   },
   "_source": "git://github.com/riyad/polymer-flot.git",
   "_target": "*",
-  "_originalSource": "riyad/polymer-flot",
-  "_direct": true
+  "_originalSource": "riyad/polymer-flot"
 }

@@ -22,7 +22,7 @@
   "ignore": [],
   "dependencies": {
     "flot": "flot/flot#^0.8.3",
-    "polymer": "Polymer/polymer#^1.2.0"
+    "polymer": "Polymer/polymer#^1.4.0"
   },
   "devDependencies": {}
 }
