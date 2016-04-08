@@ -87,6 +87,7 @@ type server struct {
 		Angle     m702.Parameter
 		Temps     [4]m702.Parameter
 	}
+	online bool // whether motors are online/connected
 
 	dataReg registry // clients interested in motor-statuses
 	cmdsReg registry // clients interested in sending/receiving motor commands
@@ -216,6 +217,19 @@ func (srv *server) run() {
 
 func (srv *server) publishData() {
 	master := srv.Motors[0]
+	{
+		c, err := net.DialTimeout("tcp", master, 2*time.Second)
+		if err != nil || c == nil {
+			srv.online = false
+		}
+		if c != nil {
+			c.Close()
+		}
+		if !srv.online {
+			srv.datac <- motorStatus{Online: false}
+			return
+		}
+	}
 
 	motor := m702.New(master)
 	for _, p := range []*m702.Parameter{
@@ -236,6 +250,7 @@ func (srv *server) publishData() {
 	}
 
 	status := motorStatus{
+		Online:   srv.online,
 		Ready:    codec.Uint32(srv.params.Ready.Data[:]) == 1,
 		Rotation: 0,
 		RPMs:     int(codec.Uint32(srv.params.RPMs.Data[:])),
@@ -283,6 +298,7 @@ func (srv *server) cmdsHandler(ws *websocket.Conn) {
 	const maxRetries = 10
 
 	motor := m702.New(c.srv.Motors[0])
+cmdLoop:
 	for {
 		log.Printf("waiting for commands...\n")
 		var req cmdRequest
@@ -344,7 +360,7 @@ func (srv *server) cmdsHandler(ws *websocket.Conn) {
 					goto retry
 				}
 				websocket.JSON.Send(c.ws, cmdReply{Err: err, Req: req})
-				return
+				goto cmdLoop
 			}
 		}
 		websocket.JSON.Send(c.ws, cmdReply{Err: nil, Req: req})
@@ -383,6 +399,7 @@ func (c *client) run() {
 }
 
 type motorStatus struct {
+	Online   bool       `json:"online"`
 	Ready    bool       `json:"ready"`
 	Rotation int        `json:"rotation_direction"`
 	RPMs     int        `json:"rpms"`

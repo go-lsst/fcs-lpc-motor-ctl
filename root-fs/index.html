@@ -121,6 +121,7 @@ window.onload = function() {
 		fcs.refreshMon(data);
 		console.log("data:"+JSON.stringify(data));
 		
+		document.getElementById("fcs-status-online").active = data.online;
 		document.getElementById("fcs-status-ready").active = data.ready;
 		document.getElementById("fcs-status-rotation-dir").innerHTML = data.rotation_direction;
 		document.getElementById("fcs-status-rpms").innerHTML = data.rpms;
