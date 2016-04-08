@@ -165,7 +165,10 @@
 									<fcs-motors-scripting></fcs-motors-scripting>
 								</div>
 								<br>
-								<fcs-motors-monitor></fcs-motors-monitor>
+								<div class="layout horizontal center-center">
+									<fcs-motors-monitor></fcs-motors-monitor>
+									<fcs-motors-webcam></fcs-motors-webcam>
+								</div>
 							</div>
 							<div>Experts ONLY</div>
 						</iron-pages>
@@ -479,4 +482,51 @@ window.onload = function() {
 	</script>
 </dom-module>
 
+<!--
+	FCS motors webcam
+-->
 
+<dom-module id=fcs-motors-webcam>
+	<template>
+		<style>
+paper-card {
+	padding: 8px;
+	margin-left: 8px;
+	margin-right: 8px;
+	margin-top: 8px;
+}
+
+paper-button[raised].colorful {
+	background-color: #4285f4;
+	color: #fff;
+}
+
+.chart {
+	width: 400px;
+	height: 200px;
+}
+
+flot-chart {
+	min-width: 800px;
+	height: 400px;
+	margin: 0 auto;
+}
+		</style>
+
+		<paper-card heading="FCS Motors WebCam" elevation="2">
+			<div class="card-content">
+				<img id="stream" src="http://134.158.120.233/mjpg/video.mjpg"/>
+			</div>
+		</paper-card>
+	</template>
+
+	<script>
+Polymer({
+	is: "fcs-motors-webcam",
+});
+
+window.onload = function() {
+}
+	</script>
+
+</dom-module>
