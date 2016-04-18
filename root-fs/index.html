@@ -23,7 +23,8 @@
   </head>
   <script>
 var fcs = {
-	user: "visitor",
+	user: "N/A",
+	token: "",
 	addr: "{{.Addr}}",
 	last_update: "N/A",
 	ready: false,
@@ -56,13 +57,12 @@ var fcs = {
 	},
 };
 
-fcs.handleLogin = function(event) {
-	fcs.user = event.detail.username;
-	console.log("welcome "+event.detail.username);
-	console.log("event: "+JSON.stringify(event));
-	var div = document.getElementById("fcs-app");
-	div.innerHTML = "<fcs-lpc-motor-app></fcs-lpc-motor-app>";
-}
+(function() {
+	var token = getCookie("FCS_TOKEN");
+	var user = getCookie("FCS_USER");
+	fcs.user = user;
+	fcs.token = token;
+}())
 
 fcs.uploadScriptFile = function(event) {
 }
@@ -100,6 +100,17 @@ fcs.refreshMon = function(data) {
 	$("#fcs-mon-temperature").prop("data", [fcs.mon.temps[0], fcs.mon.temps[1], fcs.mon.temps[2], fcs.mon.temps[3]]);
 	$("#fcs-mon-position").prop("data", [fcs.mon.position]);
 	$("#fcs-mon-rpms").prop("data", [fcs.mon.rpms]);
+}
+
+function getCookie(cname) {
+    var name = cname + "=";
+    var ca = document.cookie.split(';');
+    for(var i=0; i<ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0)==' ') c = c.substring(1);
+        if (c.indexOf(name) == 0) return c.substring(name.length,c.length);
+    }
+    return "";
 }
 
 window.onload = function() {
@@ -198,7 +209,7 @@ window.onload = function() {
 	<body unresolved class="layout vertical center-center">
 
 		<div id="fcs-app">
-			<fcs-lpc-motor-login></fcs-lpc-motor-login>
+			<fcs-lpc-motor-app></fcs-lpc-motor-app>
 		</div>
 
 	</body>

@@ -33,8 +33,6 @@
 <link rel="import" href="bower_components/polymer-flot/flot-chart.html">
 <link rel="import" href="bower_components/polymer-flot/flot-time-plugin.html">
 
-<link rel="import" href="bower_components/login-polyform/login-polyform.html">
-
 <dom-module id="fcs-lpc-motor-login">
 	<template>
 		<style>
@@ -46,19 +44,48 @@
       max-width: 250px;
       min-width: 200px;
     }
+	button.no-style {
+		-webkit-appearance: none;
+		border: 0;
+		padding: 0;
+		background: transparent;
+	}
 		</style>
 
-		<login-polyform on-login="fcs_handle_login" username="visitor">
+		<!--
+		<login-polyform on-login="fcs_handle_login" username="visitor" method="post" action="/login" passwordValidationPattern=".*">
 			<img avatar src="http://www.lsst.org/sites/default/files/logo_1.png" alt="avatar"/>
 		</login-polyform>
+
+
+		<FORM>
+<INPUT TYPE="button" onClick="history.go(0)" VALUE="Refresh">
+</FORM>
+		-->
+
+		<form method="post" action="/login">
+			<img avatar src="http://www.lsst.org/sites/default/files/logo_1.png" alt="avatar"/>
+			<paper-input name="username" label="User" value="visitor" required ></paper-input>
+			<paper-input name="password" label="Password" type="password" required></paper-input>
+			<button class="no-style" type="submit"><paper-button raised>Submit</paper-button></button>
+		</form>
 	</template>
 
 	<script>
 	Polymer({
 		is:"fcs-lpc-motor-login",
-		fcs_handle_login: function(event) {
-			return fcs.handleLogin(event);
+		fcs_submit_login: function(event) {
+			console.log("fcs_handle_login: "+event);
+			var form = document.getElementById("form");
+			console.log("form: "+form+" -- method: ["+form.method+"] -- action=["+form.action+"]");
+			form.method = "post";
+			form.action = "/login";
+			console.log(" -->> method: ["+form.method+"] -- action=["+form.action+"]");
+			form.submit();
+			//return fcs.handleLogin(event);
 		},
+		passwordValidationPattern: ".*?",
+		passwordErrorMessage: "booo",
 	});
 	</script>
 </dom-module>

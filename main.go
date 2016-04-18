@@ -52,8 +52,8 @@ func main() {
 
 	srv := newServer()
 	mux := http.NewServeMux()
-	//mux.Handle("/", http.FileServer(http.Dir("./root-fs")))
 	mux.Handle("/", srv)
+	mux.HandleFunc("/login", srv.handleLogin)
 	mux.Handle("/cmds", websocket.Handler(srv.cmdsHandler))
 	mux.Handle("/data", websocket.Handler(srv.dataHandler))
 	err := http.ListenAndServe(srv.Addr, mux)
@@ -81,6 +81,9 @@ type server struct {
 	Addr   string
 	fs     http.Handler
 	tmpl   *template.Template
+
+	session *authRegistry
+
 	params struct {
 		Ready     m702.Parameter
 		Rotation0 m702.Parameter
@@ -111,6 +114,7 @@ func newServer() *server {
 		Addr:    addr,
 		fs:      http.FileServer(http.Dir("./root-fs")),
 		tmpl:    template.Must(template.New("fcs").Parse(string(MustAsset("index.html")))),
+		session: newAuthRegistry(),
 		dataReg: newRegistry(),
 		cmdsReg: newRegistry(),
 		datac:   make(chan motorStatus),
@@ -136,6 +140,21 @@ func newServer() *server {
 
 func (srv *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.RequestURI == "/" {
+		client, _, err := srv.checkCredentials(w, r)
+		if err != nil {
+			http.Error(w, "credentials error: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if !client.auth {
+			srv.handleLogin(w, r)
+			return
+		}
+
+		http.SetCookie(w, &http.Cookie{
+			Name:  "FCS_USER",
+			Value: client.name,
+		})
 		srv.tmpl.Execute(w, srv)
 		return
 	}
@@ -386,6 +405,7 @@ type client struct {
 	reg   *registry
 	ws    *websocket.Conn
 	datac chan []byte
+	acl   int // acl notes whether the client is authentified and has r/w access
 }
 
 func (c *client) Release() {
