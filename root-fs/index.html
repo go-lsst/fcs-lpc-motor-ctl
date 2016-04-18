@@ -77,6 +77,7 @@ fcs.resetCommands = function(event) {
 fcs.sendCommand = function(event) {
 	var data = {
 		type: "ctl",
+		token: fcs.token,
 		name: event.name,
 	};
 	data.value = Number(document.getElementById("fcs-ctl-"+event.name+"-slider").value);

@@ -36,7 +36,11 @@ var (
 	codec    = binary.BigEndian
 	addrFlag = flag.String("addr", "", "address:port to serve web-app")
 
-	errMotorOffline = fcsError{1, "fcs: motor OFFLINE"}
+	errMotorOffline   = fcsError{1, "fcs: motor OFFLINE"}
+	errOpNotSupported = fcsError{2, "fcs: operation not supported"}
+	errUserAuth       = fcsError{100, "fcs: user not authenticated"}
+	errUserPerm       = fcsError{101, "fcs: insufficient user permissions"}
+	errInvalidReq     = fcsError{102, "fcs: invalid request"}
 )
 
 func newParameter(name string) m702.Parameter {
@@ -318,6 +322,7 @@ func (srv *server) cmdsHandler(ws *websocket.Conn) {
 
 	const maxRetries = 10
 
+	acl := 0
 	motor := m702.New(c.srv.Motors[0])
 cmdLoop:
 	for {
@@ -329,6 +334,20 @@ cmdLoop:
 			return
 		}
 		log.Printf("received: %v\n", req)
+		if acl == 0 {
+			wc, ok := srv.session.get(req.Token)
+			if wc.name == "" || !wc.auth || !ok {
+				websocket.JSON.Send(c.ws, cmdReply{Err: errUserAuth.Error(), Req: req})
+				continue
+			}
+			acl++
+			c.setACL(wc.name)
+		}
+		if c.acl == 0 {
+			websocket.JSON.Send(c.ws, cmdReply{Err: errUserPerm.Error(), Req: req})
+			continue
+		}
+
 		nretries := 0
 	retry:
 		params := make([]m702.Parameter, 1)
@@ -364,11 +383,11 @@ cmdLoop:
 			codec.PutUint32(params[0].Data[:], uint32(req.Value))
 
 		case "angle-position":
-			websocket.JSON.Send(c.ws, cmdReply{Err: "not supported", Req: req})
+			websocket.JSON.Send(c.ws, cmdReply{Err: errOpNotSupported.Error(), Req: req})
 			continue
 
 		default:
-			log.Printf("invalid request: %#v\n", req)
+			websocket.JSON.Send(c.ws, cmdReply{Err: errInvalidReq.Error(), Req: req})
 			return
 		}
 
@@ -405,7 +424,7 @@ type client struct {
 	reg   *registry
 	ws    *websocket.Conn
 	datac chan []byte
-	acl   int // acl notes whether the client is authentified and has r/w access
+	acl   byte // acl notes whether the client is authentified and has r/w access
 }
 
 func (c *client) Release() {
@@ -432,6 +451,15 @@ func (c *client) run() {
 	}
 }
 
+func (c *client) setACL(user string) {
+	switch user {
+	case "fcs":
+		c.acl = 1
+	case "visitor":
+		c.acl = 0
+	}
+}
+
 type motorStatus struct {
 	Online   bool       `json:"online"`
 	Ready    bool       `json:"ready"`
@@ -443,6 +471,7 @@ type motorStatus struct {
 
 type cmdRequest struct {
 	Type  string  `json:"type"`
+	Token string  `json:"token"` // Token is the web-client requestor
 	Name  string  `json:"name"`
 	Value float64 `json:"value"`
 }

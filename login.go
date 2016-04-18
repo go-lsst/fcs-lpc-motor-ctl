@@ -112,7 +112,7 @@ func (srv *server) checkCredentials(w http.ResponseWriter, r *http.Request) (web
 			Name:  "FCS_TOKEN",
 			Value: uuid.NewV4().String(),
 		}
-		client = webClient{auth: false}
+		client = webClient{auth: false, token: cookie.Value}
 		srv.session.set(cookie.Value, client)
 	}
 
@@ -121,8 +121,9 @@ func (srv *server) checkCredentials(w http.ResponseWriter, r *http.Request) (web
 }
 
 type webClient struct {
-	name string
-	auth bool
+	name  string
+	token string
+	auth  bool
 }
 
 type authRegistry struct {
