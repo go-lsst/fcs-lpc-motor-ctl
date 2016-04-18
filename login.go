@@ -77,6 +77,7 @@ func (srv *server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	client.name = user
 	srv.session.set(cookie, client)
 
+	r.SetBasicAuth(user, pass)
 	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
 
