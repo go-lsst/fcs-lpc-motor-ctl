@@ -429,7 +429,7 @@ textarea {
 				<br>
 				<div>
 					<h4>Commands</h4>
-					<form is="iron-form" id="fcs-upload-commands-form" method="get" action="/upload-commands">
+					<form is="iron-form" id="fcs-upload-commands-form" method="post" action="/upload-commands">
 						<paper-textarea label="fcs-commands" max-rows=4 rows=4 always-float-label placeholder="get 0.8.15"></paper-textarea>
 						<paper-button raised class="colorful" onclick="fcs.uploadCommands(event)">Submit</paper-button>
 						<paper-button raised class="colorful" onclick="fcs.resetCommands(event)">Reset</paper-button>

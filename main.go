@@ -328,6 +328,8 @@ func (srv *server) cmdsHandler(ws *websocket.Conn) {
 
 	acl := 0
 	motor := m702.New(c.srv.Motors[0])
+	script := newScripter(motor)
+
 cmdLoop:
 	for {
 		log.Printf("waiting for commands...\n")
@@ -388,6 +390,17 @@ cmdLoop:
 
 		case "angle-position":
 			websocket.JSON.Send(c.ws, cmdReply{Err: errOpNotSupported.Error(), Req: req})
+			continue
+
+		case "upload-commands":
+			log.Printf(">>> commands: %q\n", req.Cmds)
+			r := bytes.NewReader([]byte(req.Cmds))
+			err := script.run(motor, r)
+			if err != nil {
+				websocket.JSON.Send(c.ws, cmdReply{Err: err.Error(), Req: req})
+			} else {
+				websocket.JSON.Send(c.ws, cmdReply{Err: "", Req: req})
+			}
 			continue
 
 		default:
@@ -478,6 +491,7 @@ type cmdRequest struct {
 	Token string  `json:"token"` // Token is the web-client requestor
 	Name  string  `json:"name"`
 	Value float64 `json:"value"`
+	Cmds  string  `json:"cmds"`
 }
 
 type cmdReply struct {

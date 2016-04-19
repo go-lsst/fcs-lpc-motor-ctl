@@ -68,6 +68,15 @@ fcs.uploadScriptFile = function(event) {
 }
 
 fcs.uploadCommands = function(event) {
+	var form = Polymer.dom(event).localTarget.parentElement;
+
+	var cmd = {
+		type: "ctl",
+		token: fcs.token,
+		name: "upload-commands",
+		cmds: form.textarea.value,
+	}
+	fcs.chan.cmds.send(JSON.stringify(cmd));
 }
 
 fcs.resetCommands = function(event) {
