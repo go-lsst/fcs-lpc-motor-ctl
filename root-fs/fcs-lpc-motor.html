@@ -30,9 +30,6 @@
 <link rel="import" href="bower_components/paper-toggle-button/paper-toggle-button.html">
 <link rel="import" href="bower_components/paper-toolbar/paper-toolbar.html">
 
-<link rel="import" href="bower_components/polymer-flot/flot-chart.html">
-<link rel="import" href="bower_components/polymer-flot/flot-time-plugin.html">
-
 <dom-module id="fcs-lpc-motor-login">
 	<template>
 		<style>
@@ -507,15 +504,11 @@ paper-button[raised].colorful {
 	color: #fff;
 }
 
-.chart {
+.plot-style {
 	width: 400px;
 	height: 200px;
-}
-
-flot-chart {
-	min-width: 800px;
-	height: 400px;
-	margin: 0 auto;
+	font-size: 14px;
+	line-height: 1.2em;
 }
 		</style>
 
@@ -523,17 +516,17 @@ flot-chart {
 			<div class="card-content">
 				<div>
 					<h4>Temperature</h4>
-					<flot-chart id="fcs-mon-temperature"></flot-chart>
+					<div id="fcs-mon-temperature" class="plot-style">N/A</div>
 				</div>
 
 				<div>
 					<h4>Angular position</h4>
-					<flot-chart id="fcs-mon-position"></flot-chart>
+					<div id="fcs-mon-position" class="plot-style">N/A</div>
 				</div>
 
 				<div>
 					<h4>RPMs</h4>
-					<flot-chart id="fcs-mon-rpms"></flot-chart>
+					<div id="fcs-mon-rpms" class="plot-style">N/A</div>
 				</div>
 
 

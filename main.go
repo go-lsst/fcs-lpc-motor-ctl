@@ -100,6 +100,12 @@ type server struct {
 		Angle     m702.Parameter
 		Temps     [4]m702.Parameter
 	}
+	histos struct {
+		rows []monData
+		Temp [4][]float64
+		Pos  []float64
+		RPMs []float64
+	}
 	online bool // whether motors are online/connected
 
 	dataReg registry // clients interested in motor-statuses
@@ -236,7 +242,12 @@ func (srv *server) publishData() {
 			c.Close()
 		}
 		if !srv.online {
-			srv.datac <- motorStatus{Online: false}
+			srv.histos.rows = append(srv.histos.rows, monData{id: time.Now()})
+			plots := srv.makeMonPlots()
+			srv.datac <- motorStatus{
+				Online: false,
+				Histos: plots,
+			}
 			return
 		}
 	}
@@ -259,24 +270,34 @@ func (srv *server) publishData() {
 		}
 	}
 
-	status := motorStatus{
-		Online:   srv.online,
-		Ready:    codec.Uint32(srv.params.Ready.Data[:]) == 1,
-		Rotation: 0,
-		RPMs:     int(codec.Uint32(srv.params.RPMs.Data[:])),
-		// Angle: int(codec.Uint32(srv.params.Angle.Data[:])),
-		Temps: [4]float64{
+	mon := monData{
+		id:   time.Now(),
+		rpms: codec.Uint32(srv.params.RPMs.Data[:]),
+		temps: [4]float64{
 			float64(codec.Uint32(srv.params.Temps[0].Data[:])),
 			float64(codec.Uint32(srv.params.Temps[1].Data[:])),
 			float64(codec.Uint32(srv.params.Temps[2].Data[:])),
 			float64(codec.Uint32(srv.params.Temps[3].Data[:])),
 		},
 	}
+
 	switch {
 	case codec.Uint32(srv.params.Rotation0.Data[:]) == 1:
-		status.Rotation = -1
+		mon.rotation = -1
 	case codec.Uint32(srv.params.Rotation1.Data[:]) == 1:
-		status.Rotation = +1
+		mon.rotation = +1
+	}
+	srv.histos.rows = append(srv.histos.rows, mon)
+	plots := srv.makeMonPlots()
+
+	status := motorStatus{
+		Online:   srv.online,
+		Ready:    codec.Uint32(srv.params.Ready.Data[:]) == 1,
+		Rotation: mon.rotation,
+		RPMs:     int(mon.rpms),
+		// Angle: int(codec.Uint32(srv.params.Angle.Data[:])),
+		Temps:  mon.temps,
+		Histos: plots,
 	}
 
 	srv.datac <- status
@@ -461,12 +482,13 @@ func (c *client) setACL(user string) {
 }
 
 type motorStatus struct {
-	Online   bool       `json:"online"`
-	Ready    bool       `json:"ready"`
-	Rotation int        `json:"rotation_direction"`
-	RPMs     int        `json:"rpms"`
-	Angle    int        `json:"angle"`
-	Temps    [4]float64 `json:"temps"`
+	Online   bool              `json:"online"`
+	Ready    bool              `json:"ready"`
+	Rotation int               `json:"rotation_direction"`
+	RPMs     int               `json:"rpms"`
+	Angle    int               `json:"angle"`
+	Temps    [4]float64        `json:"temps"`
+	Histos   map[string]string `json:"histos"`
 }
 
 type cmdRequest struct {

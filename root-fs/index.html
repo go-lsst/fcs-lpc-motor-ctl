@@ -33,29 +33,6 @@ var fcs = {
 		cmds: null,
 		data: null,
 	},
-	mon: {
-		temps: [[],[],[],[]],
-		position: [],
-		rpms: [],
-	},
-	plot_options: {
-		legend: {
-			position: "nw",
-			noColumns: 2,
-			backgroundOpacity: 0.2
-		},
-		xaxis: {
-			mode: "time",
-			timezone: "browser",
-			timeformat: "%Y/%m/%d\n%H:%M:%S"
-		},
-		yaxis: {
-			position: "right",
-		},
-		selection: {
-			mode: "x"
-		},
-	},
 };
 
 (function() {
@@ -109,19 +86,13 @@ fcs.sendCommand = function(event) {
 
 fcs.refreshMon = function(data) {
 
-	for (var i = 0; i < data.temps.length; i++) {
-		fcs.mon.temps[i].push([fcs.last_update.getTime(), data.temps[i]]);
+	var plots = ["temperature", "position", "rpms"];
+	var histos = data.histos;
+	for (var i = 0; i < plots.length; i++) {
+		var id = plots[i];
+		var plot = document.getElementById("fcs-mon-"+id);
+		plot.innerHTML = histos[id];
 	}
-	fcs.mon.position.push([fcs.last_update.getTime(), data.angle]);
-	fcs.mon.rpms.push([fcs.last_update.getTime(), data.rpms]);
-
-	$("#fcs-mon-temperature").prop("options", fcs.plot_options);
-	$("#fcs-mon-position").prop("options", fcs.plot_options);
-	$("#fcs-mon-rpms").prop("options", fcs.plot_options);
-
-	$("#fcs-mon-temperature").prop("data", [fcs.mon.temps[0], fcs.mon.temps[1], fcs.mon.temps[2], fcs.mon.temps[3]]);
-	$("#fcs-mon-position").prop("data", [fcs.mon.position]);
-	$("#fcs-mon-rpms").prop("data", [fcs.mon.rpms]);
 }
 
 function getCookie(cname) {
@@ -151,10 +122,8 @@ window.onload = function() {
 		}
 		update.innerHTML=fcs.last_update.toUTCString();
 		var data = JSON.parse(event.data);
-		if (data.online) {
-			fcs.refreshMon(data);
-		}
-		console.log("data:"+JSON.stringify(data));
+		fcs.refreshMon(data);
+		// console.log("data:"+JSON.stringify(data));
 		
 		document.getElementById("fcs-status-online").active = data.online;
 		document.getElementById("fcs-status-ready").active = data.ready;

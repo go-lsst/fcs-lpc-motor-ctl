@@ -34,7 +34,6 @@
     "iron-form": "PolymerElements/iron-form#^1.0.16",
     "iron-autogrow-textarea": "PolymerElements/iron-autogrow-textarea#^1.0.10",
     "jquery": "^2.2.0",
-    "polymer-flot": "riyad/polymer-flot",
     "iron-flex-layout": "PolymerElements/iron-flex-layout#^1.2.3",
     "paper-dialog": "PolymerElements/paper-dialog#^1.0.4",
     "iron-icons": "PolymerElements/iron-icons#^1.1.3"
