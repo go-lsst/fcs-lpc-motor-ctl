@@ -8,7 +8,7 @@
 
 <script src="bower_components/jquery/dist/jquery.js"></script>
 
-<link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="bower_components/iron-flex-layout/iron-flex-layout-classes.html">
 
 <link rel="import" href="bower_components/iron-autogrow-textarea/iron-autogrow-textarea.html">
 <link rel="import" href="bower_components/iron-form/iron-form.html">
@@ -413,23 +413,23 @@ iron-autogrow-textarea {
 textarea {
 	border:1px solid #eee;
 }
-
 		</style>
 
 		<paper-card heading="FCS Motors Scripting" elevation="2">
 			<div class="card-content">
 				<div>
-					<h4>Input File</h4>
-					<form is="iron-form" id="fcs-upload-script-file-form" method="post" action="/upload-script-file" enctype="multipart/form-data">
-						<paper-input type="file" name="upload-file" required noLabelFloat size=20></paper-input>
-						<paper-input type="hidden" name="token" value="{{token}}" required></paper-input>
-						<paper-button raised class="colorful" onclick="fcs.uploadScriptFile(event)">Submit</paper-button>
+					<h4>Input Script File</h4>
+					<form id="fcs-upload-script-file-form">
+						<div class="center layout horizontal">
+						<input type="file" id="fileInput" name="upload-file" size=20></input>
+						<paper-button raised class="colorful" on-click="_submit">Submit</paper-button>
+						</div>
 					</form>
 				</div>
 				<br>
 				<div>
 					<h4>Commands</h4>
-					<form is="iron-form" id="fcs-upload-commands-form" method="post" action="/upload-commands">
+					<form is="iron-form" id="fcs-upload-commands-form">
 						<paper-textarea label="fcs-commands" max-rows=4 rows=4 always-float-label placeholder="get 0.8.15"></paper-textarea>
 						<paper-button raised class="colorful" onclick="fcs.uploadCommands(event)">Submit</paper-button>
 						<paper-button raised class="colorful" onclick="fcs.resetCommands(event)">Reset</paper-button>
@@ -444,6 +444,10 @@ Polymer({
 	is: "fcs-motors-scripting",
 	properties: {
 		token: {type: String, value: ""},
+	},
+	_submit: function() {
+		var elem = this.$.fileInput;
+		fcs.uploadScriptFile(elem.files.item(0));
 	},
 });
 	</script>

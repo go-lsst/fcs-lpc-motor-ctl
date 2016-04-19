@@ -22,6 +22,7 @@
     </style>
   </head>
   <script>
+"use strict";
 var fcs = {
 	user: "N/A",
 	token: "",
@@ -64,7 +65,18 @@ var fcs = {
 	fcs.token = token;
 }())
 
-fcs.uploadScriptFile = function(event) {
+fcs.uploadScriptFile = function(file) {
+	var reader = new FileReader();
+	reader.onloadend = function() {
+		var cmd = {
+			type:  "ctl",
+			token: fcs.token,
+			name:  "upload-commands",
+			cmds:  reader.result,
+		}
+		fcs.chan.cmds.send(JSON.stringify(cmd));
+	}
+	reader.readAsBinaryString(file);
 }
 
 fcs.uploadCommands = function(event) {

@@ -106,7 +106,6 @@ type server struct {
 	cmdsReg registry // clients interested in sending/receiving motor commands
 
 	datac chan motorStatus
-	cmdsc chan command
 }
 
 func newServer() *server {
@@ -179,7 +178,6 @@ func (srv *server) run() {
 	}()
 
 	dataBuf := new(bytes.Buffer)
-	cmdsBuf := new(bytes.Buffer)
 	for {
 		select {
 		case c := <-srv.dataReg.register:
@@ -206,23 +204,6 @@ func (srv *server) run() {
 					"client disconnected [%v]\n",
 					c.ws.LocalAddr(),
 				)
-			}
-
-		case cmd := <-srv.cmdsc:
-			log.Printf("received command: %v\n", cmd)
-			cmdsBuf.Reset()
-			err := json.NewEncoder(cmdsBuf).Encode(cmd)
-			if err != nil {
-				log.Printf("error marshalling data: %v\n", err)
-				continue
-			}
-			for c := range srv.cmdsReg.clients {
-				select {
-				case c.datac <- cmdsBuf.Bytes():
-				default:
-					close(c.datac)
-					delete(srv.cmdsReg.clients, c)
-				}
 			}
 
 		case data := <-srv.datac:
@@ -339,7 +320,10 @@ cmdLoop:
 			log.Printf("error rcv: %v\n", err)
 			return
 		}
-		log.Printf("received: %v\n", req)
+		log.Printf(
+			"received: {type=%q token=%q name=%q value=%v cmds=%q}\n",
+			req.Type, req.Token, req.Name, req.Value, req.Cmds,
+		)
 		if acl == 0 {
 			wc, ok := srv.session.get(req.Token)
 			if wc.name == "" || !wc.auth || !ok {
@@ -358,11 +342,11 @@ cmdLoop:
 	retry:
 		params := make([]m702.Parameter, 1)
 		switch req.Name {
-		case "ready":
+		case cmdReqReady:
 			params[0] = newParameter(paramReady)
 			codec.PutUint32(params[0].Data[:], uint32(req.Value))
 
-		case "rotation-direction":
+		case cmdReqRotDir:
 			params = make([]m702.Parameter, 2)
 			switch int(req.Value) {
 			case +1:
@@ -384,16 +368,15 @@ cmdLoop:
 				codec.PutUint32(params[1].Data[:], 0)
 			}
 
-		case "rpm":
+		case cmdReqRPM:
 			params[0] = newParameter(paramRPMs)
 			codec.PutUint32(params[0].Data[:], uint32(req.Value))
 
-		case "angle-position":
+		case cmdReqAnglePos:
 			websocket.JSON.Send(c.ws, cmdReply{Err: errOpNotSupported.Error(), Req: req})
 			continue
 
-		case "upload-commands":
-			log.Printf(">>> commands: %q\n", req.Cmds)
+		case cmdReqUploadCmds:
 			r := bytes.NewReader([]byte(req.Cmds))
 			err := script.run(motor, r)
 			if err != nil {
@@ -499,8 +482,14 @@ type cmdReply struct {
 	Req cmdRequest `json:"req"`
 }
 
-type command struct {
-}
+// list of all possible and known command-request names
+const (
+	cmdReqReady      = "ready"
+	cmdReqRotDir     = "rotation-direction"
+	cmdReqRPM        = "rpm"
+	cmdReqAnglePos   = "angle-position"
+	cmdReqUploadCmds = "upload-commands"
+)
 
 func getHostIP() string {
 	host, err := os.Hostname()
