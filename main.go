@@ -144,6 +144,7 @@ func newServer() *server {
 		newParameter(paramTemp2),
 		newParameter(paramTemp3),
 	}
+	srv.histos.rows = make([]monData, 0, 512)
 
 	go srv.run()
 
@@ -232,6 +233,24 @@ func (srv *server) run() {
 }
 
 func (srv *server) publishData() {
+	// make sure the amount of memory used for the histos is under control
+	switch {
+	case len(srv.histos.rows) >= 512:
+		for i, row := range srv.histos.rows {
+			if i%2 == 0 {
+				srv.histos.rows[i/2] = row
+			}
+		}
+		srv.histos.rows = srv.histos.rows[:len(srv.histos.rows)/2]
+	case len(srv.histos.rows) == 0:
+		// no-op
+	default:
+		if time.Since(srv.histos.rows[0].id) >= 6*time.Hour {
+			srv.histos.rows[0] = srv.histos.rows[len(srv.histos.rows)-1]
+			srv.histos.rows = srv.histos.rows[:1]
+		}
+	}
+
 	master := srv.Motors[0]
 	{
 		c, err := net.DialTimeout("tcp", master, 2*time.Second)
