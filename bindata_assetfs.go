@@ -87,7 +87,7 @@ func bowerJson() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "bower.json", size: 1606, mode: os.FileMode(420), modTime: time.Unix(1461078787, 0)}
+	info := bindataFileInfo{name: "bower.json", size: 1606, mode: os.FileMode(420), modTime: time.Unix(1461078977, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -127,7 +127,7 @@ func fcsLpcMotorHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "fcs-lpc-motor.html", size: 15004, mode: os.FileMode(420), modTime: time.Unix(1461078748, 0)}
+	info := bindataFileInfo{name: "fcs-lpc-motor.html", size: 15004, mode: os.FileMode(420), modTime: time.Unix(1461078977, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
