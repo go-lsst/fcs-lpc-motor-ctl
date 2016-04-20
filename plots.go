@@ -6,6 +6,8 @@ package main
 
 import (
 	"bytes"
+	"encoding/binary"
+	"fmt"
 	"image/color"
 	"image/color/palette"
 	"math"
@@ -64,8 +66,46 @@ type monData struct {
 	temps    [4]float64
 }
 
-func (mon monData) x() float64 {
+const (
+	monDataLen = 54
+)
+
+func (mon *monData) x() float64 {
+	mon.buflen()
 	return float64(mon.id.Unix())
+}
+
+func (mon *monData) write(buf []byte) {
+	i := 0
+	binary.LittleEndian.PutUint64(buf[i:i+8], uint64(mon.id.Unix()))
+	i += 8
+	binary.LittleEndian.PutUint16(buf[i:i+2], uint16(mon.rotation))
+	i += 2
+	binary.LittleEndian.PutUint32(buf[i:i+4], mon.rpms)
+	i += 4
+	binary.LittleEndian.PutUint64(buf[i:i+8], math.Float64bits(mon.angle))
+	i += 8
+	for _, temp := range mon.temps {
+		binary.LittleEndian.PutUint64(buf[i:i+8], math.Float64bits(temp))
+		i += 8
+	}
+}
+
+func (mon *monData) buflen() int {
+	sz := 0
+	sz += 8     // mon.id
+	sz += 2     // mon.rotation (-1,0,1)
+	sz += 4     // mon.rpms
+	sz += 8     // mon.angle
+	sz += 4 * 8 // mon.temps
+	return sz
+}
+
+func init() {
+	blen := ((*monData)(nil)).buflen()
+	if blen != monDataLen {
+		panic(fmt.Errorf("fcs: monData buffer sanity check: blen=%d want=%d", blen, monDataLen))
+	}
 }
 
 type monRotation []monData

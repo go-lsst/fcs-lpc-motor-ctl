@@ -176,14 +176,7 @@ func (srv *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (srv *server) run() {
-	go func() {
-		tick := time.NewTicker(5 * time.Second)
-		srv.publishData()
-		for range tick.C {
-			srv.publishData()
-		}
-	}()
-
+	go srv.monitor()
 	dataBuf := new(bytes.Buffer)
 	for {
 		select {
