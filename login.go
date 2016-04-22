@@ -82,7 +82,7 @@ func (srv *server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	srv.session.set(cookie, client)
 
 	r.SetBasicAuth(user, pass)
-	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func (srv *server) authenticate(user, pass string) bool {
