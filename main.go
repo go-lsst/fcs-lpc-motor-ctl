@@ -144,7 +144,7 @@ func newServer() *server {
 		newParameter(paramTemp2),
 		newParameter(paramTemp3),
 	}
-	srv.histos.rows = make([]monData, 0, 512)
+	srv.histos.rows = make([]monData, 0, 128)
 
 	go srv.run()
 
@@ -177,7 +177,6 @@ func (srv *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (srv *server) run() {
 	go srv.monitor()
-	dataBuf := new(bytes.Buffer)
 	for {
 		select {
 		case c := <-srv.dataReg.register:
@@ -207,7 +206,7 @@ func (srv *server) run() {
 			}
 
 		case data := <-srv.datac:
-			dataBuf.Reset()
+			dataBuf := new(bytes.Buffer)
 			err := json.NewEncoder(dataBuf).Encode(data)
 			if err != nil {
 				log.Printf("error marshalling data: %v\n", err)
@@ -228,7 +227,7 @@ func (srv *server) run() {
 func (srv *server) publishData() {
 	// make sure the amount of memory used for the histos is under control
 	switch {
-	case len(srv.histos.rows) >= 512:
+	case len(srv.histos.rows) >= 128:
 		for i, row := range srv.histos.rows {
 			if i%2 == 0 {
 				srv.histos.rows[i/2] = row
