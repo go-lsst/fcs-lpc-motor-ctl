@@ -121,8 +121,8 @@ func newServer() *server {
 	}
 	srv := &server{
 		Motors: []string{
-			"134.158.125.223:502",
-			"134.158.125.224:502",
+			"195.221.117.245:503",
+			"195.221.117.245:504",
 		},
 		Addr:    addr,
 		fs:      http.FileServer(http.Dir("./root-fs")),
