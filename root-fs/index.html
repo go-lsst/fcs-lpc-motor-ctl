@@ -134,6 +134,18 @@ window.onload = function() {
 			document.getElementById("fcs-status-temp-"+i).innerHTML = data.temps[i]+" °C";
 		}
 
+		if (data.online) {
+			document.getElementById("fcs-status-online").innerHTML = "Online";
+		} else {
+			document.getElementById("fcs-status-online").innerHTML = "Offline";
+		}
+	
+		if (data.ready) {
+			document.getElementById("fcs-status-ready").innerHTML = "Ready";
+		} else {
+			document.getElementById("fcs-status-ready").innerHTML = "Not Ready";
+		}
+
 		if (fcs.ready != data.ready) {
 			fcs.ready = data.ready;
 			document.getElementById("fcs-ctl-ready-slider").value = fcs.ready;
