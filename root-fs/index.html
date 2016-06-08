@@ -97,11 +97,14 @@ fcs.refreshMon = function(data) {
 
 fcs.switchWebCam = function() {
 	var webcam = document.getElementById("fcs-webcam-stream");
+	var button = document.getElementById("fcs-webcam-stream-button");
 	console.log("webcam: ["+webcam.innerHTML+"]");
 	if (webcam.innerHTML == "") {
 		webcam.innerHTML = "<img id=\"stream\" src=\"http://195.221.117.245:80/mjpg/video.mjpg\"/>";
+		button.innerHTML = "Disable";
 	} else {
 		webcam.innerHTML = "";
+		button.innerHTML = "Enable";
 	}
 }
 
