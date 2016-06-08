@@ -155,14 +155,15 @@ func renderSVG(p *plot.Plot) string {
 	return string(out.Bytes())
 }
 
-func (srv *server) makeMonPlots() map[string]string {
+func (srv *server) makeMonPlots(i int) map[string]string {
 	plots := make(map[string]string, 3)
+	motor := srv.motors()[i]
 
 	// temperature
 	{
 		p, err := newPlot("", "T (°C)",
-			monTemps{0, srv.histos.rows}, monTemps{1, srv.histos.rows},
-			monTemps{2, srv.histos.rows}, monTemps{3, srv.histos.rows},
+			monTemps{0, motor.histos.rows}, monTemps{1, motor.histos.rows},
+			monTemps{2, motor.histos.rows}, monTemps{3, motor.histos.rows},
 		)
 		if err != nil {
 			panic(err)
@@ -175,7 +176,7 @@ func (srv *server) makeMonPlots() map[string]string {
 	{
 		p, err := newPlot(
 			"", "Angular Position",
-			monAngle(srv.histos.rows),
+			monAngle(motor.histos.rows),
 		)
 		if err != nil {
 			panic(err)
@@ -185,7 +186,7 @@ func (srv *server) makeMonPlots() map[string]string {
 
 	// RPMs
 	{
-		p, err := newPlot("", "RPMs", monRPMs(srv.histos.rows))
+		p, err := newPlot("", "RPMs", monRPMs(motor.histos.rows))
 		if err != nil {
 			panic(err)
 		}

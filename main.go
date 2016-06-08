@@ -15,6 +15,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 	"text/template"
 	"time"
 
@@ -40,11 +41,12 @@ var (
 	codec    = binary.BigEndian
 	addrFlag = flag.String("addr", "", "address:port to serve web-app")
 
-	errMotorOffline   = fcsError{1, "fcs: motor OFFLINE"}
-	errOpNotSupported = fcsError{2, "fcs: operation not supported"}
-	errUserAuth       = fcsError{100, "fcs: user not authenticated"}
-	errUserPerm       = fcsError{101, "fcs: insufficient user permissions"}
-	errInvalidReq     = fcsError{102, "fcs: invalid request"}
+	errMotorOffline     = fcsError{1, "fcs: motor OFFLINE"}
+	errOpNotSupported   = fcsError{2, "fcs: operation not supported"}
+	errUserAuth         = fcsError{100, "fcs: user not authenticated"}
+	errUserPerm         = fcsError{101, "fcs: insufficient user permissions"}
+	errInvalidReq       = fcsError{102, "fcs: invalid request"}
+	errInvalidMotorName = fcsError{200, "fcs: invalid motor name"}
 )
 
 func newParameter(name string) m702.Parameter {
@@ -85,28 +87,16 @@ func newRegistry() registry {
 }
 
 type server struct {
-	Motors []string
-	Addr   string
-	fs     http.Handler
-	tmpl   *template.Template
+	Addr string
+	fs   http.Handler
+	tmpl *template.Template
 
 	session *authRegistry
 
-	params struct {
-		Ready     m702.Parameter
-		Rotation0 m702.Parameter
-		Rotation1 m702.Parameter
-		RPMs      m702.Parameter
-		Angle     m702.Parameter
-		Temps     [4]m702.Parameter
+	motor struct {
+		x motor
+		z motor
 	}
-	histos struct {
-		rows []monData
-		Temp [4][]float64
-		Pos  []float64
-		RPMs []float64
-	}
-	online bool // whether motors are online/connected
 
 	dataReg registry // clients interested in motor-statuses
 	cmdsReg registry // clients interested in sending/receiving motor commands
@@ -120,10 +110,6 @@ func newServer() *server {
 		addr = getHostIP() + ":5555"
 	}
 	srv := &server{
-		Motors: []string{
-			"195.221.117.245:503",
-			"195.221.117.245:504",
-		},
 		Addr:    addr,
 		fs:      http.FileServer(http.Dir("./root-fs")),
 		tmpl:    template.Must(template.New("fcs").Parse(string(MustAsset("index.html")))),
@@ -133,18 +119,8 @@ func newServer() *server {
 		datac:   make(chan motorStatus),
 	}
 
-	srv.params.Ready = newParameter(paramReady)
-	srv.params.Rotation0 = newParameter(paramRotation0)
-	srv.params.Rotation1 = newParameter(paramRotation1)
-	srv.params.RPMs = newParameter(paramRPMs)
-	// srv.params.Angle = newParameter("") // FIXME(sbinet)
-	srv.params.Temps = [4]m702.Parameter{
-		newParameter(paramTemp0),
-		newParameter(paramTemp1),
-		newParameter(paramTemp2),
-		newParameter(paramTemp3),
-	}
-	srv.histos.rows = make([]monData, 0, 128)
+	srv.motor.x = newMotor("195.221.117.245:5021") // master-x
+	srv.motor.z = newMotor("195.221.117.245:5023") // master-z
 
 	go srv.run()
 
@@ -224,94 +200,107 @@ func (srv *server) run() {
 	}
 }
 
+func (srv *server) motors() []*motor {
+	return []*motor{
+		// FIXME(sbinet)
+		// &srv.motor.x,
+		&srv.motor.z,
+	}
+}
+
 func (srv *server) publishData() {
-	// make sure the amount of memory used for the histos is under control
-	switch {
-	case len(srv.histos.rows) >= 128:
-		for i, row := range srv.histos.rows {
-			if i%2 == 0 {
-				srv.histos.rows[i/2] = row
+	for imotor, motor := range srv.motors() {
+		// make sure the amount of memory used for the histos is under control
+		switch {
+		case len(motor.histos.rows) >= 128:
+			for i, row := range motor.histos.rows {
+				if i%2 == 0 {
+					motor.histos.rows[i/2] = row
+				}
+			}
+			motor.histos.rows = motor.histos.rows[:len(motor.histos.rows)/2]
+		case len(motor.histos.rows) == 0:
+			// no-op
+		default:
+			if time.Since(motor.histos.rows[0].id) >= 6*time.Hour {
+				motor.histos.rows[0] = motor.histos.rows[len(motor.histos.rows)-1]
+				motor.histos.rows = motor.histos.rows[:1]
 			}
 		}
-		srv.histos.rows = srv.histos.rows[:len(srv.histos.rows)/2]
-	case len(srv.histos.rows) == 0:
-		// no-op
-	default:
-		if time.Since(srv.histos.rows[0].id) >= 6*time.Hour {
-			srv.histos.rows[0] = srv.histos.rows[len(srv.histos.rows)-1]
-			srv.histos.rows = srv.histos.rows[:1]
-		}
-	}
 
-	master := srv.Motors[0]
-	{
-		c, err := net.DialTimeout("tcp", master, 2*time.Second)
-		if err != nil || c == nil {
-			srv.online = false
-		}
-		if c != nil {
-			c.Close()
-		}
-		if !srv.online {
-			srv.histos.rows = append(srv.histos.rows, monData{id: time.Now()})
-			plots := srv.makeMonPlots()
-			srv.datac <- motorStatus{
-				Online: false,
-				Histos: plots,
+		{
+			c, err := net.DialTimeout("tcp", motor.name, 2*time.Second)
+			if err != nil || c == nil {
+				motor.online = false
+			} else {
+				motor.online = true
 			}
-			return
+			if c != nil {
+				c.Close()
+			}
+			if !motor.online {
+				motor.histos.rows = append(motor.histos.rows, monData{id: time.Now()})
+				plots := srv.makeMonPlots(imotor)
+				srv.datac <- motorStatus{
+					Name:   motor.name,
+					Online: false,
+					Histos: plots,
+				}
+				continue
+			}
 		}
-	}
 
-	motor := m702.New(master)
-	for _, p := range []*m702.Parameter{
-		&srv.params.Ready,
-		&srv.params.Rotation0,
-		&srv.params.Rotation1,
-		&srv.params.RPMs,
-		// &srv.params.Angle,
-		&srv.params.Temps[0],
-		&srv.params.Temps[1],
-		&srv.params.Temps[2],
-		&srv.params.Temps[3],
-	} {
-		err := motor.ReadParam(p)
-		if err != nil {
-			log.Printf("error reading %v Pr-%v: %v\n", master, *p, err)
+		mm := m702.New(motor.name)
+		for _, p := range []*m702.Parameter{
+			&motor.params.Ready,
+			&motor.params.Rotation0,
+			&motor.params.Rotation1,
+			&motor.params.RPMs,
+			// &motor.params.Angle,
+			&motor.params.Temps[0],
+			&motor.params.Temps[1],
+			&motor.params.Temps[2],
+			&motor.params.Temps[3],
+		} {
+			err := mm.ReadParam(p)
+			if err != nil {
+				log.Printf("error reading %v Pr-%v: %v\n", motor.name, *p, err)
+			}
 		}
-	}
 
-	mon := monData{
-		id:   time.Now(),
-		rpms: codec.Uint32(srv.params.RPMs.Data[:]),
-		temps: [4]float64{
-			float64(codec.Uint32(srv.params.Temps[0].Data[:])),
-			float64(codec.Uint32(srv.params.Temps[1].Data[:])),
-			float64(codec.Uint32(srv.params.Temps[2].Data[:])),
-			float64(codec.Uint32(srv.params.Temps[3].Data[:])),
-		},
-	}
+		mon := monData{
+			id:   time.Now(),
+			rpms: codec.Uint32(motor.params.RPMs.Data[:]),
+			temps: [4]float64{
+				float64(codec.Uint32(motor.params.Temps[0].Data[:])),
+				float64(codec.Uint32(motor.params.Temps[1].Data[:])),
+				float64(codec.Uint32(motor.params.Temps[2].Data[:])),
+				float64(codec.Uint32(motor.params.Temps[3].Data[:])),
+			},
+		}
 
-	switch {
-	case codec.Uint32(srv.params.Rotation0.Data[:]) == 1:
-		mon.rotation = -1
-	case codec.Uint32(srv.params.Rotation1.Data[:]) == 1:
-		mon.rotation = +1
-	}
-	srv.histos.rows = append(srv.histos.rows, mon)
-	plots := srv.makeMonPlots()
+		switch {
+		case codec.Uint32(motor.params.Rotation0.Data[:]) == 1:
+			mon.rotation = -1
+		case codec.Uint32(motor.params.Rotation1.Data[:]) == 1:
+			mon.rotation = +1
+		}
+		motor.histos.rows = append(motor.histos.rows, mon)
+		plots := srv.makeMonPlots(imotor)
 
-	status := motorStatus{
-		Online:   srv.online,
-		Ready:    codec.Uint32(srv.params.Ready.Data[:]) == 1,
-		Rotation: mon.rotation,
-		RPMs:     int(mon.rpms),
-		// Angle: int(codec.Uint32(srv.params.Angle.Data[:])),
-		Temps:  mon.temps,
-		Histos: plots,
-	}
+		status := motorStatus{
+			Name:     motor.name,
+			Online:   motor.online,
+			Ready:    codec.Uint32(motor.params.Ready.Data[:]) == 1,
+			Rotation: mon.rotation,
+			RPMs:     int(mon.rpms),
+			// Angle: int(codec.Uint32(motor.params.Angle.Data[:])),
+			Temps:  mon.temps,
+			Histos: plots,
+		}
 
-	srv.datac <- status
+		srv.datac <- status
+	}
 }
 
 func (srv *server) dataHandler(ws *websocket.Conn) {
@@ -340,9 +329,6 @@ func (srv *server) cmdsHandler(ws *websocket.Conn) {
 	const maxRetries = 10
 
 	acl := 0
-	motor := m702.New(c.srv.Motors[0])
-	script := newScripter(motor)
-
 cmdLoop:
 	for {
 		log.Printf("waiting for commands...\n")
@@ -371,6 +357,19 @@ cmdLoop:
 		}
 
 		nretries := 0
+		var srvMotor *motor
+		switch strings.ToLower(req.Motor) {
+		case "x":
+			srvMotor = &c.srv.motor.x
+		case "z":
+			srvMotor = &c.srv.motor.z
+		default:
+			websocket.JSON.Send(c.ws, cmdReply{Err: errInvalidMotorName.Error(), Req: req})
+			continue
+		}
+		motor := m702.New(srvMotor.name)
+		script := newScripter(motor)
+
 	retry:
 		params := make([]m702.Parameter, 1)
 		switch req.Name {
@@ -423,9 +422,9 @@ cmdLoop:
 			return
 		}
 
-		log.Printf("sending command %v to motor...\n", params)
+		log.Printf("sending command %v to motor %s...\n", params, srvMotor.name)
 		{
-			conn, err := net.DialTimeout("tcp", c.srv.Motors[0], 1*time.Second)
+			conn, err := net.DialTimeout("tcp", srvMotor.name, 1*time.Second)
 			if err != nil || conn == nil {
 				websocket.JSON.Send(c.ws, cmdReply{Err: errMotorOffline.Error(), Req: req})
 				if conn != nil {
@@ -492,17 +491,8 @@ func (c *client) setACL(user string) {
 	}
 }
 
-type motorStatus struct {
-	Online   bool              `json:"online"`
-	Ready    bool              `json:"ready"`
-	Rotation int               `json:"rotation_direction"`
-	RPMs     int               `json:"rpms"`
-	Angle    int               `json:"angle"`
-	Temps    [4]float64        `json:"temps"`
-	Histos   map[string]string `json:"histos"`
-}
-
 type cmdRequest struct {
+	Motor string  `json:"motor"` // Motor is the motor name "x" | "z"
 	Type  string  `json:"type"`
 	Token string  `json:"token"` // Token is the web-client requestor
 	Name  string  `json:"name"`

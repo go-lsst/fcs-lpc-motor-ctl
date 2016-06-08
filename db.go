@@ -51,15 +51,20 @@ func (srv *server) monitor() {
 func (srv *server) storeMonData() {
 	db := openDB("mon.db")
 	defer db.Close()
-	mon := srv.histos.rows[len(srv.histos.rows)-1]
 	db.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists(bucketMon)
 		if err != nil {
 			return err
 		}
-		var buf [monDataLen]byte
-		mon.write(buf[:])
-		err = bucket.Put(buf[:8], buf[8:])
+		for _, motor := range srv.motors() {
+			var buf [monDataLen]byte
+			mon := motor.histos.rows[len(motor.histos.rows)-1]
+			mon.write(buf[:])
+			err = bucket.Put(buf[:8], buf[8:])
+			if err != nil {
+				return err
+			}
+		}
 		return err
 	})
 }
