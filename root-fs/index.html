@@ -28,7 +28,10 @@ var fcs = {
 	token: "",
 	addr: "{{.Addr}}",
 	last_update: "N/A",
-	ready: false,
+	ready: {
+		x: false,
+		z: false,
+	},
 	chan: {
 		cmds: null,
 		data: null,
@@ -73,24 +76,33 @@ fcs.resetCommands = function(event) {
 }
 
 fcs.sendCommand = function(event) {
+	// console.log("sending command... (sender="+event.sender+")");
+	var motor = "undefined";
+	if (event.sender.startsWith("fcs-ctl-x-")) {
+		motor = "x";
+	} else if (event.sender.startsWith("fcs-ctl-z-")) {
+		motor = "z";
+	} else {
+		motor = "undefined";
+	}
 	var data = {
+		motor: motor,
 		type: "ctl",
 		token: fcs.token,
 		name: event.name,
 	};
-	data.value = Number(document.getElementById("fcs-ctl-"+event.name+"-slider").value);
-	console.log("sending command: "+JSON.stringify(data));
+	data.value = Number(document.getElementById("fcs-ctl-"+motor+"-"+event.name+"-slider").value);
+	// console.log("sending command: "+JSON.stringify(data));
 
 	fcs.chan.cmds.send(JSON.stringify(data));
 }
 
 fcs.refreshMon = function(data) {
-
 	var plots = ["temperature", "position", "rpms"];
 	var histos = data.histos;
 	for (var i = 0; i < plots.length; i++) {
 		var id = plots[i];
-		var plot = document.getElementById("fcs-mon-"+id);
+		var plot = document.getElementById("fcs-mon-"+data.motor+"-"+id);
 		plot.innerHTML = histos[id];
 	}
 }
@@ -98,9 +110,9 @@ fcs.refreshMon = function(data) {
 fcs.switchWebCam = function() {
 	var webcam = document.getElementById("fcs-webcam-stream");
 	var button = document.getElementById("fcs-webcam-stream-button");
-	console.log("webcam: ["+webcam.innerHTML+"]");
+	// console.log("webcam: ["+webcam.innerHTML+"]");
 	if (webcam.innerHTML == "") {
-		webcam.innerHTML = "<img id=\"stream\" src=\"http://195.221.117.245:80/mjpg/video.mjpg\"/>";
+		webcam.innerHTML = "<img id=\"stream\" src=\"{{.WebCam}}\"/>";
 		button.innerHTML = "Disable";
 	} else {
 		webcam.innerHTML = "";
@@ -128,47 +140,48 @@ window.onload = function() {
 
 	fcs.chan.data.onmessage = function(event) {
 		fcs.last_update = new Date();
+		var data = JSON.parse(event.data);
+		var motor = data.motor;
 		var update = document.getElementById("fcs-status-update");
 		if (update == null) {
 			// main page, after credentials verification, not there yet...
 			return;
 		}
 		update.innerHTML=fcs.last_update.toUTCString();
-		var data = JSON.parse(event.data);
 		fcs.refreshMon(data);
 		// console.log("data:"+JSON.stringify(data));
 		
-		document.getElementById("fcs-status-online").active = data.online;
-		document.getElementById("fcs-status-ready").active = data.ready;
-		document.getElementById("fcs-status-rotation-dir").innerHTML = data.rotation_direction;
-		document.getElementById("fcs-status-rpms").innerHTML = data.rpms;
-		document.getElementById("fcs-status-angle").innerHTML = data.angle;
+		document.getElementById("fcs-status-"+motor+"-online").active = data.online;
+		document.getElementById("fcs-status-"+motor+"-ready").active = data.ready;
+		document.getElementById("fcs-status-"+motor+"-rotation-dir").innerHTML = data.rotation_direction;
+		document.getElementById("fcs-status-"+motor+"-rpms").innerHTML = data.rpms;
+		document.getElementById("fcs-status-"+motor+"-angle").innerHTML = data.angle;
 		for (var i=0; i<data.temps.length;i++) {
-			document.getElementById("fcs-status-temp-"+i).innerHTML = data.temps[i]+" °C";
+			document.getElementById("fcs-status-"+motor+"-temp-"+i).innerHTML = data.temps[i]+" °C";
 		}
 
 		if (data.online) {
-			document.getElementById("fcs-status-online").innerHTML = "Online";
+			document.getElementById("fcs-status-"+motor+"-online").innerHTML = "Online";
+			if (data.ready) {
+				document.getElementById("fcs-status-"+motor+"-ready").innerHTML = "Ready";
+			} else {
+				document.getElementById("fcs-status-"+motor+"-ready").innerHTML = "Not Ready";
+			}
 		} else {
-			document.getElementById("fcs-status-online").innerHTML = "Offline";
+			document.getElementById("fcs-status-"+motor+"-online").innerHTML = "Offline";
+			document.getElementById("fcs-status-"+motor+"-ready").innerHTML = "N/A";
 		}
 	
-		if (data.ready) {
-			document.getElementById("fcs-status-ready").innerHTML = "Ready";
-		} else {
-			document.getElementById("fcs-status-ready").innerHTML = "Not Ready";
-		}
-
-		if (fcs.ready != data.ready) {
-			fcs.ready = data.ready;
-			document.getElementById("fcs-ctl-ready-slider").value = fcs.ready;
+		if (fcs.ready[motor] != data.ready) {
+			fcs.ready[motor] = data.ready;
+			document.getElementById("fcs-ctl-"+motor+"-ready-slider").value = fcs.ready[motor];
 			var ids = [
-				"fcs-ctl-rotation-direction",
-				"fcs-ctl-rpm",
-				"fcs-ctl-angle-position",
+				"fcs-ctl-"+motor+"-rotation-direction",
+				"fcs-ctl-"+motor+"-rpm",
+				"fcs-ctl-"+motor+"-angle-position",
 			];
-			var disabled = !fcs.ready;
-			var raised = fcs.ready;
+			var disabled = !fcs.ready[motor];
+			var raised = fcs.ready[motor];
 
 			for (var i = 0; i < ids.length; i++) {
 				var id = ids[i];

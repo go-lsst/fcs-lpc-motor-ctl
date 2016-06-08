@@ -187,13 +187,15 @@
 						<iron-pages selected="{{selected}}">
 							<div class="layout vertical center-center">
 								<div class="layout horizontal center-center">
-									<fcs-motors-ctl></fcs-motors-ctl>
+									<fcs-motors-ctl motor="x"></fcs-motors-ctl>
+									<fcs-motors-ctl motor="z"></fcs-motors-ctl>
 									<fcs-motors-scripting></fcs-motors-scripting>
 									<fcs-motors-alert></fcs-motors-alert>
 								</div>
 								<br>
 								<div class="layout horizontal center-center">
-									<fcs-motors-monitor></fcs-motors-monitor>
+									<fcs-motors-monitor motor="x"></fcs-motors-monitor>
+									<fcs-motors-monitor motor="z"></fcs-motors-monitor>
 									<fcs-motors-webcam></fcs-motors-webcam>
 								</div>
 							</div>
@@ -249,21 +251,54 @@ th {
 	<paper-card heading="FCS Motors Status" elevation="2">
 		<div class="card-content">
 			<table>
+				<thead>
+					<tr><th></th>
+						<th>Motor-X</th>
+						<th>Motor-Z</th>
+					</tr>
+				</thead>
 				<tbody>
-					<tr><th style="text-align:left">Motors</th><th><paper-button id="fcs-status-online" toggles disabled raised class="fcs-switch green">N/A</paper-button></th></tr>
-					<tr><th style="text-align:left">Motors</th><th><paper-button id="fcs-status-ready" toggles disabled raised class="fcs-switch green">N/A</paper-button></th></tr>
-					<tr><th style="text-align:left">Rotation Direction</th><th><paper-button id="fcs-status-rotation-dir" raised disabled class="left-align">N/A</paper-button></th></tr>
-					<tr><th style="text-align:left">RPMs</th><th><paper-button id="fcs-status-rpms" raised disabled class="left-align">N/A</paper-button></th></tr>
-					<tr><th style="text-align:left">Angular Position</th><th><paper-button id="fcs-status-angle" raised disabled class="left-align">N/A</paper-button></th></tr>
-					<tr><th style="text-align:left">Temperature</th><th><paper-button id="fcs-status-temp-0" raised disabled suffix="C" class="left-align">N/A</paper-button></th></tr>
-					<tr><th style="text-align:left">Temperature</th><th><paper-button id="fcs-status-temp-1" raised disabled suffix="C" class="left-align">N/A</paper-button></th></tr>
-					<tr><th style="text-align:left">Temperature</th><th><paper-button id="fcs-status-temp-2" raised disabled suffix="C" class="left-align">N/A</paper-button></th></tr>
-					<tr><th style="text-align:left">Temperature</th><th><paper-button id="fcs-status-temp-3" raised disabled suffix="C" class="left-align">N/A</paper-button></th></tr>
+					<tr><th style="text-align:left">Connection</th>
+						<th><paper-button id="fcs-status-x-online" toggles disabled raised class="fcs-switch green">N/A</paper-button></th>
+						<th><paper-button id="fcs-status-z-online" toggles disabled raised class="fcs-switch green">N/A</paper-button></th>
+					</tr>
+					<tr><th style="text-align:left">Status</th>
+						<th><paper-button id="fcs-status-x-ready" toggles disabled raised class="fcs-switch green">N/A</paper-button></th>
+						<th><paper-button id="fcs-status-z-ready" toggles disabled raised class="fcs-switch green">N/A</paper-button></th>
+					</tr>
+					<tr><th style="text-align:left">Rotation Direction</th>
+						<th><paper-button id="fcs-status-x-rotation-dir" raised disabled class="left-align">N/A</paper-button></th>
+						<th><paper-button id="fcs-status-z-rotation-dir" raised disabled class="left-align">N/A</paper-button></th>
+					</tr>
+					<tr><th style="text-align:left">RPMs</th>
+						<th><paper-button id="fcs-status-x-rpms" raised disabled class="left-align">N/A</paper-button></th>
+						<th><paper-button id="fcs-status-z-rpms" raised disabled class="left-align">N/A</paper-button></th>
+					</tr>
+					<tr><th style="text-align:left">Angular Position</th>
+						<th><paper-button id="fcs-status-x-angle" raised disabled class="left-align">N/A</paper-button></th>
+						<th><paper-button id="fcs-status-z-angle" raised disabled class="left-align">N/A</paper-button></th>
+					</tr>
+					<tr><th style="text-align:left">Temperature</th>
+						<th><paper-button id="fcs-status-x-temp-0" raised disabled suffix="C" class="left-align">N/A</paper-button></th>
+						<th><paper-button id="fcs-status-z-temp-0" raised disabled suffix="C" class="left-align">N/A</paper-button></th>
+					</tr>
+					<tr><th style="text-align:left">Temperature</th>
+						<th><paper-button id="fcs-status-x-temp-1" raised disabled suffix="C" class="left-align">N/A</paper-button></th>
+						<th><paper-button id="fcs-status-z-temp-1" raised disabled suffix="C" class="left-align">N/A</paper-button></th>
+					</tr>
+					<tr><th style="text-align:left">Temperature</th>
+						<th><paper-button id="fcs-status-x-temp-2" raised disabled suffix="C" class="left-align">N/A</paper-button></th>
+						<th><paper-button id="fcs-status-z-temp-2" raised disabled suffix="C" class="left-align">N/A</paper-button></th>
+					</tr>
+					<tr><th style="text-align:left">Temperature</th>
+						<th><paper-button id="fcs-status-x-temp-3" raised disabled suffix="C" class="left-align">N/A</paper-button></th>
+						<th><paper-button id="fcs-status-z-temp-3" raised disabled suffix="C" class="left-align">N/A</paper-button></th>
+					</tr>
 				</tbody>
 			</table>
 			<br>
 			Last status update:<br>
-		   	<span id="fcs-status-update">N/A<span>
+			<span id="fcs-status-update">N/A<span>
 		</div>
 	</paper-card>
 </template>
@@ -271,6 +306,9 @@ th {
 <script>
 Polymer({
 	is:"fcs-motors-status",
+	properties: {
+		motor: String
+	},
 });
 </script>
 
@@ -324,37 +362,37 @@ paper-icon-button {
 
 		</style>
 
-		<paper-card heading="FCS Motors Controls" elevation="2">
+		<paper-card heading="FCS Motor-{{motor}} Controls" elevation="2">
 			<div class="card-content">
 				<div>
-					<div>Motors ready</div>
+					<div>Motor-{{motor}} ready</div>
 					<div class="layout horizontal">
-						<paper-slider id="fcs-ctl-ready-slider" pin value="0" min="0" max="+1" editable></paper-slider>
-						<paper-button raised class="colorful" onclick="fcs.sendCommand({name:'ready'})" id="fcs-ctl-ready-submit">Submit</paper-button>
+						<paper-slider id="fcs-ctl-{{motor}}-ready-slider" pin value="0" min="0" max="+1" editable></paper-slider>
+						<paper-button raised class="colorful" onclick="fcs.sendCommand({sender:id, name:'ready'})" id="fcs-ctl-{{motor}}-ready-submit">Submit</paper-button>
 					</div>
 				</div>
 				<br>
 				<div>
-					<div>Rotation Direction</div>
+					<div>Rotation Direction-{{motor}}</div>
 					<div class="layout horizontal">
-						<paper-slider id="fcs-ctl-rotation-direction-slider" pin value="0" min="-1" max="+1" disabled editable></paper-slider>
-						<paper-button disabled class="colorful" onclick="fcs.sendCommand({name:'rotation-direction'})" id="fcs-ctl-rotation-direction-submit">Submit</paper-button>
+						<paper-slider id="fcs-ctl-{{motor}}-rotation-direction-slider" pin value="0" min="-1" max="+1" disabled editable></paper-slider>
+						<paper-button disabled class="colorful" onclick="fcs.sendCommand({sender:id, name:'rotation-direction'})" id="fcs-ctl-{{motor}}-rotation-direction-submit">Submit</paper-button>
 					</div>
 				</div>
 
 				<div>
 					<div>RPMs</div>
 					<div class="layout horizontal">
-						<paper-slider id="fcs-ctl-rpm-slider" pin value="0" min="0" max="3000" disabled editable></paper-slider>
-						<paper-button disabled class="colorful" onclick="fcs.sendCommand({name:'rpm'})" id="fcs-ctl-rpm-submit">Submit</paper-button>
+						<paper-slider id="fcs-ctl-{{motor}}-rpm-slider" pin value="0" min="0" max="3000" disabled editable></paper-slider>
+						<paper-button disabled class="colorful" onclick="fcs.sendCommand({sender:id, name:'rpm'})" id="fcs-ctl-{{motor}}-rpm-submit">Submit</paper-button>
 					</div>
 				</div>
 
 				<div>
 					<div>Angular Position</div>
 					<div class="layout horizontal">
-						<paper-slider id="fcs-ctl-angle-position-slider" pin value="0" min="-180" max="+180" disabled editable></paper-slider>
-						<paper-button disabled class="colorful" onclick="fcs.sendCommand({name:'angle-position'})" id="fcs-ctl-angle-position-submit">Submit</paper-button>
+						<paper-slider id="fcs-ctl-{{motor}}-angle-position-slider" pin value="0" min="-180" max="+180" disabled editable></paper-slider>
+						<paper-button disabled class="colorful" onclick="fcs.sendCommand({sender:id, name:'angle-position'})" id="fcs-ctl-{{motor}}-angle-position-submit">Submit</paper-button>
 					</div>
 				</div>
 			</div>
@@ -364,6 +402,9 @@ paper-icon-button {
 	<script>
 Polymer({
 	is: "fcs-motors-ctl",
+	properties: {
+		motor: String
+	},
 });
 	</script>
 
@@ -513,21 +554,21 @@ paper-button[raised].colorful {
 }
 		</style>
 
-		<paper-card heading="FCS Motors Monitor" elevation="2">
+		<paper-card heading="FCS Motor-{{motor}} Monitor" elevation="2">
 			<div class="card-content">
 				<div>
 					<h4>Temperature</h4>
-					<div id="fcs-mon-temperature" class="plot-style">N/A</div>
+					<div id="fcs-mon-{{motor}}-temperature" class="plot-style">N/A</div>
 				</div>
 
 				<div>
 					<h4>Angular position</h4>
-					<div id="fcs-mon-position" class="plot-style">N/A</div>
+					<div id="fcs-mon-{{motor}}-position" class="plot-style">N/A</div>
 				</div>
 
 				<div>
 					<h4>RPMs</h4>
-					<div id="fcs-mon-rpms" class="plot-style">N/A</div>
+					<div id="fcs-mon-{{motor}}-rpms" class="plot-style">N/A</div>
 				</div>
 
 
@@ -538,6 +579,9 @@ paper-button[raised].colorful {
 	<script>
 Polymer({
 	is: "fcs-motors-monitor",
+	properties: {
+		motor: String
+	},
 });
 
 window.onload = function() {

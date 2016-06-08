@@ -10,14 +10,16 @@ import (
 
 type motor struct {
 	name   string
+	addr   string
 	params motorParams
 	histos motorHistos
 	online bool // whether motors are online/connected
 }
 
-func newMotor(name string) motor {
+func newMotor(name, addr string) motor {
 	return motor{
 		name:   name,
+		addr:   addr,
 		params: newMotorParams(),
 		histos: motorHistos{
 			rows: make([]monData, 0, 128),
@@ -58,7 +60,7 @@ type motorHistos struct {
 }
 
 type motorStatus struct {
-	Name     string            `json:"name"`
+	Motor    string            `json:"motor"`
 	Online   bool              `json:"online"`
 	Ready    bool              `json:"ready"`
 	Rotation int               `json:"rotation_direction"`

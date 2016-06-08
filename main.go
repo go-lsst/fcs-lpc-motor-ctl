@@ -87,9 +87,10 @@ func newRegistry() registry {
 }
 
 type server struct {
-	Addr string
-	fs   http.Handler
-	tmpl *template.Template
+	Addr   string
+	WebCam string
+	fs     http.Handler
+	tmpl   *template.Template
 
 	session *authRegistry
 
@@ -111,6 +112,7 @@ func newServer() *server {
 	}
 	srv := &server{
 		Addr:    addr,
+		WebCam:  "http://195.221.117.245:80/mjpg/video.mjpg",
 		fs:      http.FileServer(http.Dir("./root-fs")),
 		tmpl:    template.Must(template.New("fcs").Parse(string(MustAsset("index.html")))),
 		session: newAuthRegistry(),
@@ -119,8 +121,8 @@ func newServer() *server {
 		datac:   make(chan motorStatus),
 	}
 
-	srv.motor.x = newMotor("195.221.117.245:5021") // master-x
-	srv.motor.z = newMotor("195.221.117.245:5023") // master-z
+	srv.motor.x = newMotor("x", "195.221.117.245:5021") // master-x
+	srv.motor.z = newMotor("z", "195.221.117.245:5023") // master-z
 
 	go srv.run()
 
@@ -202,8 +204,7 @@ func (srv *server) run() {
 
 func (srv *server) motors() []*motor {
 	return []*motor{
-		// FIXME(sbinet)
-		// &srv.motor.x,
+		&srv.motor.x,
 		&srv.motor.z,
 	}
 }
@@ -229,7 +230,7 @@ func (srv *server) publishData() {
 		}
 
 		{
-			c, err := net.DialTimeout("tcp", motor.name, 2*time.Second)
+			c, err := net.DialTimeout("tcp", motor.addr, 2*time.Second)
 			if err != nil || c == nil {
 				motor.online = false
 			} else {
@@ -242,7 +243,7 @@ func (srv *server) publishData() {
 				motor.histos.rows = append(motor.histos.rows, monData{id: time.Now()})
 				plots := srv.makeMonPlots(imotor)
 				srv.datac <- motorStatus{
-					Name:   motor.name,
+					Motor:  motor.name,
 					Online: false,
 					Histos: plots,
 				}
@@ -250,7 +251,7 @@ func (srv *server) publishData() {
 			}
 		}
 
-		mm := m702.New(motor.name)
+		mm := m702.New(motor.addr)
 		for _, p := range []*m702.Parameter{
 			&motor.params.Ready,
 			&motor.params.Rotation0,
@@ -264,7 +265,7 @@ func (srv *server) publishData() {
 		} {
 			err := mm.ReadParam(p)
 			if err != nil {
-				log.Printf("error reading %v Pr-%v: %v\n", motor.name, *p, err)
+				log.Printf("error reading %v (motor-%s) Pr-%v: %v\n", motor.addr, motor.name, *p, err)
 			}
 		}
 
@@ -289,7 +290,7 @@ func (srv *server) publishData() {
 		plots := srv.makeMonPlots(imotor)
 
 		status := motorStatus{
-			Name:     motor.name,
+			Motor:    motor.name,
 			Online:   motor.online,
 			Ready:    codec.Uint32(motor.params.Ready.Data[:]) == 1,
 			Rotation: mon.rotation,
@@ -367,7 +368,7 @@ cmdLoop:
 			websocket.JSON.Send(c.ws, cmdReply{Err: errInvalidMotorName.Error(), Req: req})
 			continue
 		}
-		motor := m702.New(srvMotor.name)
+		motor := m702.New(srvMotor.addr)
 		script := newScripter(motor)
 
 	retry:
@@ -422,9 +423,9 @@ cmdLoop:
 			return
 		}
 
-		log.Printf("sending command %v to motor %s...\n", params, srvMotor.name)
+		log.Printf("sending command %v to motor-%s %s...\n", params, srvMotor.name, srvMotor.addr)
 		{
-			conn, err := net.DialTimeout("tcp", srvMotor.name, 1*time.Second)
+			conn, err := net.DialTimeout("tcp", srvMotor.addr, 1*time.Second)
 			if err != nil || conn == nil {
 				websocket.JSON.Send(c.ws, cmdReply{Err: errMotorOffline.Error(), Req: req})
 				if conn != nil {
