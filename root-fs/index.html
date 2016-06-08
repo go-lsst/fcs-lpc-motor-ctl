@@ -95,6 +95,16 @@ fcs.refreshMon = function(data) {
 	}
 }
 
+fcs.switchWebCam = function() {
+	var webcam = document.getElementById("fcs-webcam-stream");
+	console.log("webcam: ["+webcam.innerHTML+"]");
+	if (webcam.innerHTML == "") {
+		webcam.innerHTML = "<img id=\"stream\" src=\"http://195.221.117.245:80/mjpg/video.mjpg\"/>";
+	} else {
+		webcam.innerHTML = "";
+	}
+}
+
 function getCookie(cname) {
     var name = cname + "=";
     var ca = document.cookie.split(';');

@@ -576,9 +576,8 @@ flot-chart {
 		</style>
 
 		<paper-card heading="FCS Motors WebCam" elevation="2">
-			<div class="card-content">
-				<img id="stream" src="http://195.221.117.245:80/mjpg/video.mjpg"/>
-			</div>
+			<paper-button raised class="colorful" onclick="fcs.switchWebCam()">Enable/Disable</paper-button>
+			<div class="card-content" id="fcs-webcam-stream"></div>
 		</paper-card>
 	</template>
 
