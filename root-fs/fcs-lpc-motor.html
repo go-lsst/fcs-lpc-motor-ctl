@@ -354,8 +354,14 @@ paper-icon-button {
 }
 
 		</style>
-		
-		<paper-button raised="[[raised]]" disabled="[[disabled]]" class="colorful" on-tap="fcsSendCommand" id="fcs-ctl-{{motor}}-{{cmd}}-submit">Submit</paper-button>
+
+		<div>
+			<div>{{title}}</div>
+			<div class="layout horizontal">
+				<paper-slider id="fcs-ctl-{{motor}}-{{cmd}}-slider" pin value="{{value}}" min="{{min}}" max="{{max}}" disabled="[[disabled]]" editable></paper-slider>
+				<paper-button raised="[[raised]]" disabled="[[disabled]]" class="colorful" on-tap="fcsSendCommand" id="fcs-ctl-{{motor}}-{{cmd}}-submit">Submit</paper-button>
+			</div>
+		</div>
 
 	</template>
 	<script>
@@ -372,6 +378,9 @@ Polymer({
 			type: Boolean,
 			value: false,
 		},
+		value: Number,
+		min: Number,
+		max: Number,
 	},
 	fcsSendCommand: function() {
 		fcs.sendCommand({motor:this.motor, name:this.cmd});
@@ -402,37 +411,11 @@ paper-card {
 
 		<paper-card heading="FCS Motor-{{motor}} Controls" elevation="2">
 			<div class="card-content">
-				<div>
-					<div>Motor-{{motor}} ready</div>
-					<div class="layout horizontal">
-						<paper-slider id="fcs-ctl-{{motor}}-ready-slider" pin value="0" min="0" max="+1" editable></paper-slider>
-						<fcs-button-cmd raised motor="{{motor}}" cmd="ready"></fcs-button-cmd>
-					</div>
-				</div>
+				<fcs-button-cmd raised motor="{{motor}}" cmd="ready" value="0" min="0" max="+1" title="Motor-{{motor}} ready"></fcs-button-cmd>
 				<br>
-				<div>
-					<div>Rotation Direction-{{motor}}</div>
-					<div class="layout horizontal">
-						<paper-slider id="fcs-ctl-{{motor}}-rotation-direction-slider" pin value="0" min="-1" max="+1" disabled editable></paper-slider>
-						<fcs-button-cmd disabled motor="{{motor}}" cmd="rotation-direction"></fcs-button-cmd>
-					</div>
-				</div>
-
-				<div>
-					<div>RPMs</div>
-					<div class="layout horizontal">
-						<paper-slider id="fcs-ctl-{{motor}}-rpm-slider" pin value="0" min="0" max="3000" disabled editable></paper-slider>
-						<fcs-button-cmd disabled motor="{{motor}}" cmd="rpm"></fcs-button-cmd>
-					</div>
-				</div>
-
-				<div>
-					<div>Angular Position</div>
-					<div class="layout horizontal">
-						<paper-slider id="fcs-ctl-{{motor}}-angle-position-slider" pin value="0" min="-180" max="+180" disabled editable></paper-slider>
-						<fcs-button-cmd disabled motor="{{motor}}" cmd="angle-position"></fcs-button-cmd>
-					</div>
-				</div>
+				<fcs-button-cmd disabled motor="{{motor}}" cmd="rotation-direction" value="0" min="-1" max="+1" title="Rotation Direction-{{motor}}"></fcs-button-cmd>
+				<fcs-button-cmd disabled motor="{{motor}}" cmd="rpm" value="0" min="0" max="3000" title="RPMs"></fcs-button-cmd>
+				<fcs-button-cmd disabled motor="{{motor}}" cmd="angle-position" value="0" min="-180" max="+180" title="Angular Position"></fcs-button-cmd>
 			</div>
 		</paper-card>
 	</template>
