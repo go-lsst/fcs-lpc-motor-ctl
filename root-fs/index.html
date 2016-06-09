@@ -100,17 +100,10 @@ fcs.refreshMon = function(data) {
 	}
 }
 
-fcs.switchWebCam = function() {
-	var webcam = document.getElementById("fcs-webcam-stream");
-	var button = document.getElementById("fcs-webcam-stream-button");
-	// console.log("webcam: ["+webcam.innerHTML+"]");
-	if (webcam.innerHTML == "") {
-		webcam.innerHTML = "<img id=\"stream\" src=\"{{.WebCam}}\"/>";
-		button.innerHTML = "Disable";
-	} else {
-		webcam.innerHTML = "";
-		button.innerHTML = "Enable";
-	}
+fcs.refreshWebcam = function(data) {
+	var node = document.getElementById("fcs-webcam-stream");
+	node.alt = "Not Available";
+	node.src = "data:image/jpeg;base64,"+data;
 }
 
 function getCookie(cname) {
@@ -142,6 +135,7 @@ window.onload = function() {
 		}
 		update.innerHTML=fcs.last_update.toUTCString();
 		fcs.refreshMon(data);
+		fcs.refreshWebcam(data.webcam);
 		// console.log("data:"+JSON.stringify(data));
 		
 		document.getElementById("fcs-status-"+motor+"-online").active = data.online;

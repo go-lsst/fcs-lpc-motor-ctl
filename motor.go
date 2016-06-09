@@ -68,4 +68,5 @@ type motorStatus struct {
 	Angle    int               `json:"angle"`
 	Temps    [4]float64        `json:"temps"`
 	Histos   map[string]string `json:"histos"`
+	Webcam   string            `json:"webcam"`
 }

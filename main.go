@@ -64,6 +64,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.Handle("/", srv)
 	mux.HandleFunc("/login", srv.handleLogin)
+	mux.HandleFunc("/webcam", srv.handleWebcam)
 	mux.Handle("/cmds", websocket.Handler(srv.cmdsHandler))
 	mux.Handle("/data", websocket.Handler(srv.dataHandler))
 	err := http.ListenAndServe(srv.Addr, mux)
@@ -87,10 +88,9 @@ func newRegistry() registry {
 }
 
 type server struct {
-	Addr   string
-	WebCam string
-	fs     http.Handler
-	tmpl   *template.Template
+	Addr string
+	fs   http.Handler
+	tmpl *template.Template
 
 	session *authRegistry
 
@@ -112,7 +112,6 @@ func newServer() *server {
 	}
 	srv := &server{
 		Addr:    addr,
-		WebCam:  "http://195.221.117.245:80/mjpg/video.mjpg",
 		fs:      http.FileServer(http.Dir("./root-fs")),
 		tmpl:    template.Must(template.New("fcs").Parse(string(MustAsset("index.html")))),
 		session: newAuthRegistry(),
@@ -246,6 +245,7 @@ func (srv *server) publishData() {
 					Motor:  motor.name,
 					Online: false,
 					Histos: plots,
+					Webcam: srv.fetchWebcamImage(),
 				}
 				continue
 			}
@@ -298,6 +298,7 @@ func (srv *server) publishData() {
 			// Angle: int(codec.Uint32(motor.params.Angle.Data[:])),
 			Temps:  mon.temps,
 			Histos: plots,
+			Webcam: srv.fetchWebcamImage(),
 		}
 
 		srv.datac <- status
