@@ -77,14 +77,7 @@ fcs.resetCommands = function(event) {
 
 fcs.sendCommand = function(event) {
 	// console.log("sending command... (sender="+event.sender+")");
-	var motor = "undefined";
-	if (event.sender.startsWith("fcs-ctl-x-")) {
-		motor = "x";
-	} else if (event.sender.startsWith("fcs-ctl-z-")) {
-		motor = "z";
-	} else {
-		motor = "undefined";
-	}
+	var motor = event.motor;
 	var data = {
 		motor: motor,
 		type: "ctl",
