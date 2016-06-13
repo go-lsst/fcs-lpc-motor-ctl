@@ -36,7 +36,6 @@ func (srv *server) handleWebcam(w http.ResponseWriter, r *http.Request) {
 
 func (srv *server) fetchWebcamImage() string {
 	url := "http://" + srv.Addr + "/webcam"
-	//url := "http://195.221.117.245/axis-cgi/jpg/image.cgi"
 	resp, err := http.Get(url)
 	if err != nil {
 		log.Printf("error fetching webcam image: %v\n", err)
