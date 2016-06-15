@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"net"
 	"net/http"
 	"os"
@@ -31,6 +32,7 @@ const (
 	paramRotation0 = "2.02.15"
 	paramRotation1 = "2.02.16"
 	paramRPMs      = "0.20.22"
+	paramPosition  = "3.70.000"
 	paramTemp0     = "0.07.004"
 	paramTemp1     = "0.07.005"
 	paramTemp2     = "0.07.006"
@@ -257,7 +259,7 @@ func (srv *server) publishData() {
 			&motor.params.Rotation0,
 			&motor.params.Rotation1,
 			&motor.params.RPMs,
-			// &motor.params.Angle,
+			&motor.params.Angle,
 			&motor.params.Temps[0],
 			&motor.params.Temps[1],
 			&motor.params.Temps[2],
@@ -295,10 +297,10 @@ func (srv *server) publishData() {
 			Ready:    codec.Uint32(motor.params.Ready.Data[:]) == 1,
 			Rotation: mon.rotation,
 			RPMs:     int(mon.rpms),
-			// Angle: int(codec.Uint32(motor.params.Angle.Data[:])),
-			Temps:  mon.temps,
-			Histos: plots,
-			Webcam: srv.fetchWebcamImage(),
+			Angle:    int(codec.Uint32(motor.params.Angle.Data[:])),
+			Temps:    mon.temps,
+			Histos:   plots,
+			Webcam:   srv.fetchWebcamImage(),
 		}
 
 		srv.datac <- status
@@ -406,7 +408,8 @@ cmdLoop:
 			codec.PutUint32(params[0].Data[:], uint32(req.Value))
 
 		case cmdReqAnglePos:
-			websocket.JSON.Send(c.ws, cmdReply{Err: errOpNotSupported.Error(), Req: req})
+			params[0] = newParameter(paramPosition)
+			codec.PutUint32(params[0].Data[:], uint32(math.Floor(req.Value*10)))
 			continue
 
 		case cmdReqUploadCmds:
