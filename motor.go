@@ -28,21 +28,23 @@ func newMotor(name, addr string) motor {
 }
 
 type motorParams struct {
-	Ready     m702.Parameter
-	Rotation0 m702.Parameter
-	Rotation1 m702.Parameter
-	RPMs      m702.Parameter
-	Angle     m702.Parameter
-	Temps     [4]m702.Parameter
+	Ready      m702.Parameter
+	Home       m702.Parameter
+	Random     m702.Parameter
+	RPMs       m702.Parameter
+	WriteAngle m702.Parameter
+	ReadAngle  m702.Parameter
+	Temps      [4]m702.Parameter
 }
 
 func newMotorParams() motorParams {
 	return motorParams{
-		Ready:     newParameter(paramReady),
-		Rotation0: newParameter(paramRotation0),
-		Rotation1: newParameter(paramRotation1),
-		RPMs:      newParameter(paramRPMs),
-		Angle:     newParameter(paramWritePos),
+		Ready:      newParameter(paramReady),
+		Home:       newParameter(paramHome),
+		Random:     newParameter(paramRandom),
+		RPMs:       newParameter(paramRPMs),
+		WriteAngle: newParameter(paramWritePos),
+		ReadAngle:  newParameter(paramReadPos),
 		Temps: [4]m702.Parameter{
 			newParameter(paramTemp0),
 			newParameter(paramTemp1),
@@ -60,13 +62,13 @@ type motorHistos struct {
 }
 
 type motorStatus struct {
-	Motor    string            `json:"motor"`
-	Online   bool              `json:"online"`
-	Ready    bool              `json:"ready"`
-	Rotation int               `json:"rotation_direction"`
-	RPMs     int               `json:"rpms"`
-	Angle    int               `json:"angle"`
-	Temps    [4]float64        `json:"temps"`
-	Histos   map[string]string `json:"histos"`
-	Webcam   string            `json:"webcam"`
+	Motor  string            `json:"motor"` // x,z
+	Online bool              `json:"online"`
+	Ready  bool              `json:"ready"`
+	Mode   string            `json:"mode"` // N/A,ready,home,random
+	RPMs   int               `json:"rpms"`
+	Angle  int               `json:"angle"`
+	Temps  [4]float64        `json:"temps"`
+	Histos map[string]string `json:"histos"`
+	Webcam string            `json:"webcam"`
 }

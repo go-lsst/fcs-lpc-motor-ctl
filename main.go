@@ -28,16 +28,16 @@ import (
 //go:generate go-bindata-assetfs -prefix=root-fs/ ./root-fs
 
 const (
-	paramReady     = "0.08.015"
-	paramRotation0 = "2.02.015"
-	paramRotation1 = "2.02.016"
-	paramRPMs      = "0.20.022"
-	paramWritePos  = "3.70.000"
-	paramReadPos   = "0.18.002"
-	paramTemp0     = "0.07.004"
-	paramTemp1     = "0.07.005"
-	paramTemp2     = "0.07.006"
-	paramTemp3     = "0.07.034"
+	paramReady    = "0.08.015"
+	paramHome     = "2.02.017"
+	paramRandom   = "2.02.011"
+	paramRPMs     = "0.20.022"
+	paramWritePos = "3.70.000"
+	paramReadPos  = "0.18.002"
+	paramTemp0    = "0.07.004"
+	paramTemp1    = "0.07.005"
+	paramTemp2    = "0.07.006"
+	paramTemp3    = "0.07.034"
 )
 
 var (
@@ -247,6 +247,7 @@ func (srv *server) publishData() {
 				srv.datac <- motorStatus{
 					Motor:  motor.name,
 					Online: false,
+					Mode:   "N/A",
 					Histos: plots,
 					Webcam: srv.fetchWebcamImage(),
 				}
@@ -257,10 +258,10 @@ func (srv *server) publishData() {
 		mm := m702.New(motor.addr)
 		for _, p := range []*m702.Parameter{
 			&motor.params.Ready,
-			&motor.params.Rotation0,
-			&motor.params.Rotation1,
+			&motor.params.Home,
+			&motor.params.Random,
 			&motor.params.RPMs,
-			&motor.params.Angle,
+			&motor.params.ReadAngle,
 			&motor.params.Temps[0],
 			&motor.params.Temps[1],
 			&motor.params.Temps[2],
@@ -275,7 +276,7 @@ func (srv *server) publishData() {
 		mon := monData{
 			id:    time.Now(),
 			rpms:  codec.Uint32(motor.params.RPMs.Data[:]),
-			angle: float64(codec.Uint32(motor.params.Angle.Data[:])) * 0.1,
+			angle: float64(codec.Uint32(motor.params.ReadAngle.Data[:])) * 0.1,
 			temps: [4]float64{
 				float64(codec.Uint32(motor.params.Temps[0].Data[:])),
 				float64(codec.Uint32(motor.params.Temps[1].Data[:])),
@@ -284,25 +285,31 @@ func (srv *server) publishData() {
 			},
 		}
 
-		switch {
-		case codec.Uint32(motor.params.Rotation0.Data[:]) == 1:
-			mon.rotation = -1
-		case codec.Uint32(motor.params.Rotation1.Data[:]) == 1:
-			mon.rotation = +1
+		ready := codec.Uint32(motor.params.Ready.Data[:]) == 1
+		if motor.online {
+			if ready {
+				mon.mode = 1
+			}
+			switch {
+			case codec.Uint32(motor.params.Home.Data[:]) == 1:
+				mon.mode = 2
+			case codec.Uint32(motor.params.Random.Data[:]) == 1:
+				mon.mode = 3
+			}
 		}
 		motor.histos.rows = append(motor.histos.rows, mon)
 		plots := srv.makeMonPlots(imotor)
 
 		status := motorStatus{
-			Motor:    motor.name,
-			Online:   motor.online,
-			Ready:    codec.Uint32(motor.params.Ready.Data[:]) == 1,
-			Rotation: mon.rotation,
-			RPMs:     int(mon.rpms),
-			Angle:    int(mon.angle),
-			Temps:    mon.temps,
-			Histos:   plots,
-			Webcam:   srv.fetchWebcamImage(),
+			Motor:  motor.name,
+			Online: motor.online,
+			Ready:  ready,
+			Mode:   mon.Mode(),
+			RPMs:   int(mon.rpms),
+			Angle:  int(mon.angle),
+			Temps:  mon.temps,
+			Histos: plots,
+			Webcam: srv.fetchWebcamImage(),
 		}
 
 		srv.datac <- status
@@ -390,27 +397,33 @@ cmdLoop:
 			params[0] = newParameter(paramReady)
 			codec.PutUint32(params[0].Data[:], uint32(req.Value))
 
-		case cmdReqRotDir:
-			params = make([]m702.Parameter, 2)
-			switch int(req.Value) {
-			case +1:
-				params[0] = newParameter(paramRotation0)
-				params[1] = newParameter(paramRotation1)
-				codec.PutUint32(params[0].Data[:], 0)
-				codec.PutUint32(params[1].Data[:], 1)
+		case cmdReqFindHome:
+			params = append([]m702.Parameter{},
+				newParameter(paramReady),
+				newParameter(paramRandom),
+				newParameter(paramHome),
+				newParameter(paramReady),
+			)
 
-			case -1:
-				params[0] = newParameter(paramRotation0)
-				params[1] = newParameter(paramRotation1)
-				codec.PutUint32(params[0].Data[:], 1)
-				codec.PutUint32(params[1].Data[:], 0)
+			codec.PutUint32(params[0].Data[:], 0)
+			codec.PutUint32(params[1].Data[:], 0)
+			codec.PutUint32(params[2].Data[:], 1)
+			codec.PutUint32(params[3].Data[:], 1)
 
-			case 0:
-				params[0] = newParameter(paramRotation0)
-				params[1] = newParameter(paramRotation1)
-				codec.PutUint32(params[0].Data[:], 0)
-				codec.PutUint32(params[1].Data[:], 0)
-			}
+		case cmdReqRandom:
+			params = append([]m702.Parameter{},
+				newParameter(paramReady),
+				newParameter(paramRandom),
+				newParameter(paramHome),
+				newParameter(paramWritePos),
+				newParameter(paramReady),
+			)
+
+			codec.PutUint32(params[0].Data[:], 0)
+			codec.PutUint32(params[1].Data[:], 1)
+			codec.PutUint32(params[2].Data[:], 0)
+			codec.PutUint32(params[3].Data[:], 0)
+			codec.PutUint32(params[4].Data[:], 1)
 
 		case cmdReqRPM:
 			params[0] = newParameter(paramRPMs)
@@ -520,8 +533,9 @@ type cmdReply struct {
 
 // list of all possible and known command-request names
 const (
+	cmdReqFindHome   = "find-home"
+	cmdReqRandom     = "random"
 	cmdReqReady      = "ready"
-	cmdReqRotDir     = "rotation-direction"
 	cmdReqRPM        = "rpm"
 	cmdReqAnglePos   = "angle-position"
 	cmdReqUploadCmds = "upload-commands"

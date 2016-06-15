@@ -142,9 +142,8 @@ window.onload = function() {
 		
 		document.getElementById("fcs-status-"+motor+"-online").active = data.online;
 		document.getElementById("fcs-status-"+motor+"-ready").active = data.ready;
-		document.getElementById("fcs-status-"+motor+"-rotation-dir").innerHTML = data.rotation_direction;
 		document.getElementById("fcs-status-"+motor+"-rpms").innerHTML = data.rpms;
-		document.getElementById("fcs-status-"+motor+"-angle").innerHTML = data.angle;
+		document.getElementById("fcs-status-"+motor+"-angle").innerHTML = data.angle + " °";
 		for (var i=0; i<data.temps.length;i++) {
 			document.getElementById("fcs-status-"+motor+"-temp-"+i).innerHTML = data.temps[i]+" °C";
 		}
@@ -160,20 +159,19 @@ window.onload = function() {
 			document.getElementById("fcs-status-"+motor+"-online").innerHTML = "Offline";
 			document.getElementById("fcs-status-"+motor+"-ready").innerHTML = "N/A";
 		}
+
+		document.getElementById("fcs-status-"+motor+"-mode").innerHTML = data.mode;
+		document.getElementById("fcs-status-"+motor+"-mode").active = data.ready;
 	
 		if (update) {
 			fcs.ready[motor] = data.ready;
-			var name = "fcs-ctl-"+motor+"-ready";
-			var node = document.getElementById(name);
 			var ids = [
-				"fcs-ctl-"+motor+"-rotation-direction",
 				"fcs-ctl-"+motor+"-rpm",
 				"fcs-ctl-"+motor+"-angle-position",
 			];
-			var disabled = !data.ready;
-			var raised = data.ready;
+			var disabled = data.mode != "random";
+			var raised = data.mode == "random";
 
-			console.log("setting disabled to: "+disabled);
 			for (var i = 0; i < ids.length; i++) {
 				var id = ids[i];
 				document.getElementById(id+"-slider").disabled = disabled;

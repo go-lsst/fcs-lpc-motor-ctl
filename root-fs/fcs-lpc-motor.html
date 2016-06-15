@@ -262,15 +262,15 @@ th {
 						<th><paper-button id="fcs-status-x-ready" toggles disabled raised class="fcs-switch green">N/A</paper-button></th>
 						<th><paper-button id="fcs-status-z-ready" toggles disabled raised class="fcs-switch green">N/A</paper-button></th>
 					</tr>
-					<tr><th style="text-align:left">Rotation Direction</th>
-						<th><paper-button id="fcs-status-x-rotation-dir" raised disabled class="left-align">N/A</paper-button></th>
-						<th><paper-button id="fcs-status-z-rotation-dir" raised disabled class="left-align">N/A</paper-button></th>
+					<tr><th style="text-align:left">Mode</th>
+						<th><paper-button id="fcs-status-x-mode" toggles disabled raised class="fcs-switch green">N/A</paper-button></th>
+						<th><paper-button id="fcs-status-z-mode" toggles disabled raised class="fcs-switch green">N/A</paper-button></th>
 					</tr>
 					<tr><th style="text-align:left">RPMs</th>
 						<th><paper-button id="fcs-status-x-rpms" raised disabled class="left-align">N/A</paper-button></th>
 						<th><paper-button id="fcs-status-z-rpms" raised disabled class="left-align">N/A</paper-button></th>
 					</tr>
-					<tr><th style="text-align:left">Angular Position</th>
+					<tr><th style="text-align:left">Position</th>
 						<th><paper-button id="fcs-status-x-angle" raised disabled class="left-align">N/A</paper-button></th>
 						<th><paper-button id="fcs-status-z-angle" raised disabled class="left-align">N/A</paper-button></th>
 					</tr>
@@ -390,6 +390,76 @@ Polymer({
 
 </dom-module>
 
+<dom-module id="fcs-button-script">
+	<template>
+		<style is="custom-style">
+paper-slider {
+	--paper-slider-input: {
+		width: 100px;
+	};
+}
+
+paper-button {
+	height: 41.375px;
+}
+
+paper-button[raised].colorful {
+	background-color: #4285f4;
+	color: #fff;
+	height: 41.375px;
+}
+
+paper-icon-button {
+	--paper-icon-button-ink-color: white;
+}
+
+paper-button.fcs-switch {
+	--paper-button-ink-color: var(--paper-pink-a200);
+	--paper-button-flat-keyboard-focus: {
+		background-color: var(--paper-pink-a200);
+		color: white !important;
+	};
+	--paper-button-raised-keyboard-focus: {
+		background-color: var(--paper-pink-a200) !important;
+		color: white !important;
+	};
+}
+
+paper-icon-button {
+	--paper-icon-button-ink-color: white;
+}
+
+		</style>
+
+		<div>
+			<div class="layout horizontal">
+				<paper-button raised class="colorful" on-tap="fcsSendCommand">{{title}}</paper-button>
+			</div>
+		</div>
+
+	</template>
+	<script>
+Polymer({
+	is: "fcs-button-script",
+	properties: {
+		motor:  String,
+		title:  String,
+		cmd:    String,
+	},
+	fcsSendCommand: function() {
+		var cmd = {
+			motor: this.motor,
+			type: "ctl",
+			token: fcs.token,
+			name:  this.cmd,
+		};
+		fcs.chan.cmds.send(JSON.stringify(cmd));
+	},
+});
+	</script>
+
+</dom-module>
+
 
 <dom-module id="fcs-motors-ctl">
 	<template>
@@ -411,11 +481,19 @@ paper-card {
 
 		<paper-card heading="FCS Motor-{{motor}} Controls" elevation="2">
 			<div class="card-content">
+				<table>
+					<tbody>
+						<tr><th><fcs-button-script motor="{{motor}}" cmd="find-home" title="Find Home"></fcs-button-script></th>
+							<th><fcs-button-script motor="{{motor}}" cmd="random"    title="Mode Random"></fcs-button-script></th>
+					</tbody>
+				</table>
+				<br>
+				<!--
 				<fcs-button-cmd id="fcs-ctl-{{motor}}-ready" raised motor="{{motor}}" cmd="ready" value="0" min="0" max="+1" title="Motor-{{motor}} ready"></fcs-button-cmd>
 				<br>
-				<fcs-button-cmd id="fcs-ctl-{{motor}}-rotation-direction" disabled motor="{{motor}}" cmd="rotation-direction" value="0" min="-1" max="+1" title="Rotation Direction-{{motor}}"></fcs-button-cmd>
+				-->
 				<fcs-button-cmd id="fcs-ctl-{{motor}}-rpm" disabled motor="{{motor}}" cmd="rpm" value="0" min="0" max="3000" title="RPMs"></fcs-button-cmd>
-				<fcs-button-cmd id="fcs-ctl-{{motor}}-angle-position" disabled motor="{{motor}}" cmd="angle-position" value="0" min="-180" max="+180" title="Angular Position"></fcs-button-cmd>
+				<fcs-button-cmd id="fcs-ctl-{{motor}}-angle-position" disabled motor="{{motor}}" cmd="angle-position" value="0" min="-90" max="+90" title="Position (degrees)"></fcs-button-cmd>
 			</div>
 		</paper-card>
 	</template>

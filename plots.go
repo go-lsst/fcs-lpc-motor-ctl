@@ -59,11 +59,11 @@ func newPlot(title, yaxis string, data ...plotter.XYer) (*plot.Plot, error) {
 }
 
 type monData struct {
-	id       time.Time
-	rotation int
-	rpms     uint32
-	angle    float64
-	temps    [4]float64
+	id    time.Time
+	mode  byte // (0=N/A,1=ready,2=home,3=random)
+	rpms  uint32
+	angle float64
+	temps [4]float64
 }
 
 const (
@@ -79,7 +79,7 @@ func (mon *monData) write(buf []byte) {
 	i := 0
 	binary.LittleEndian.PutUint64(buf[i:i+8], uint64(mon.id.Unix()))
 	i += 8
-	binary.LittleEndian.PutUint16(buf[i:i+2], uint16(mon.rotation))
+	binary.LittleEndian.PutUint16(buf[i:i+2], uint16(mon.mode))
 	i += 2
 	binary.LittleEndian.PutUint32(buf[i:i+4], mon.rpms)
 	i += 4
@@ -91,10 +91,26 @@ func (mon *monData) write(buf []byte) {
 	}
 }
 
+func (mon *monData) Mode() string {
+	switch mon.mode {
+	case 0:
+		return "N/A"
+	case 1:
+		return "ready"
+	case 2:
+		return "home"
+	case 3:
+		return "random"
+	default:
+		panic(fmt.Errorf("invalid monData.mode=%v", mon.mode))
+	}
+	panic("unreachable")
+}
+
 func (mon *monData) buflen() int {
 	sz := 0
 	sz += 8     // mon.id
-	sz += 2     // mon.rotation (-1,0,1)
+	sz += 2     // mon.mode
 	sz += 4     // mon.rpms
 	sz += 8     // mon.angle
 	sz += 4 * 8 // mon.temps
@@ -106,14 +122,6 @@ func init() {
 	if blen != monDataLen {
 		panic(fmt.Errorf("fcs: monData buffer sanity check: blen=%d want=%d", blen, monDataLen))
 	}
-}
-
-type monRotation []monData
-
-func (mon monRotation) Len() int { return len(mon) }
-func (mon monRotation) XY(i int) (float64, float64) {
-	v := mon[i]
-	return v.x(), float64(v.rotation)
 }
 
 type monRPMs []monData
