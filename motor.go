@@ -42,7 +42,7 @@ func newMotorParams() motorParams {
 		Rotation0: newParameter(paramRotation0),
 		Rotation1: newParameter(paramRotation1),
 		RPMs:      newParameter(paramRPMs),
-		Angle:     newParameter(paramPosition),
+		Angle:     newParameter(paramWritePos),
 		Temps: [4]m702.Parameter{
 			newParameter(paramTemp0),
 			newParameter(paramTemp1),

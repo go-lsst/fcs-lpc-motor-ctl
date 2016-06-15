@@ -28,11 +28,12 @@ import (
 //go:generate go-bindata-assetfs -prefix=root-fs/ ./root-fs
 
 const (
-	paramReady     = "0.08.15"
-	paramRotation0 = "2.02.15"
-	paramRotation1 = "2.02.16"
-	paramRPMs      = "0.20.22"
-	paramPosition  = "3.70.000"
+	paramReady     = "0.08.015"
+	paramRotation0 = "2.02.015"
+	paramRotation1 = "2.02.016"
+	paramRPMs      = "0.20.022"
+	paramWritePos  = "3.70.000"
+	paramReadPos   = "0.18.002"
 	paramTemp0     = "0.07.004"
 	paramTemp1     = "0.07.005"
 	paramTemp2     = "0.07.006"
@@ -272,8 +273,9 @@ func (srv *server) publishData() {
 		}
 
 		mon := monData{
-			id:   time.Now(),
-			rpms: codec.Uint32(motor.params.RPMs.Data[:]),
+			id:    time.Now(),
+			rpms:  codec.Uint32(motor.params.RPMs.Data[:]),
+			angle: float64(codec.Uint32(motor.params.Angle.Data[:])) * 0.1,
 			temps: [4]float64{
 				float64(codec.Uint32(motor.params.Temps[0].Data[:])),
 				float64(codec.Uint32(motor.params.Temps[1].Data[:])),
@@ -297,7 +299,7 @@ func (srv *server) publishData() {
 			Ready:    codec.Uint32(motor.params.Ready.Data[:]) == 1,
 			Rotation: mon.rotation,
 			RPMs:     int(mon.rpms),
-			Angle:    int(codec.Uint32(motor.params.Angle.Data[:])),
+			Angle:    int(mon.angle),
 			Temps:    mon.temps,
 			Histos:   plots,
 			Webcam:   srv.fetchWebcamImage(),
@@ -367,6 +369,13 @@ cmdLoop:
 			srvMotor = &c.srv.motor.x
 		case "z":
 			srvMotor = &c.srv.motor.z
+		case "":
+			if req.Name == cmdReqUploadCmds {
+				srvMotor = &c.srv.motor.z // FIXME(sbinet)
+			} else {
+				websocket.JSON.Send(c.ws, cmdReply{Err: errInvalidMotorName.Error(), Req: req})
+				continue
+			}
 		default:
 			websocket.JSON.Send(c.ws, cmdReply{Err: errInvalidMotorName.Error(), Req: req})
 			continue
@@ -408,9 +417,8 @@ cmdLoop:
 			codec.PutUint32(params[0].Data[:], uint32(req.Value))
 
 		case cmdReqAnglePos:
-			params[0] = newParameter(paramPosition)
+			params[0] = newParameter(paramWritePos)
 			codec.PutUint32(params[0].Data[:], uint32(math.Floor(req.Value*10)))
-			continue
 
 		case cmdReqUploadCmds:
 			r := bytes.NewReader([]byte(req.Cmds))

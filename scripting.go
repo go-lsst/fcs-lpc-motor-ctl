@@ -36,6 +36,9 @@ func (sc *Script) cmdSet(args []string) error {
 		return err
 	}
 	vtype := "u32"
+	if len(args) > 1 && len(args[1]) > 0 && string(args[1][0]) == "-" {
+		vtype = "i32"
+	}
 	if len(args) > 2 {
 		vtype = args[2]
 	}
@@ -48,11 +51,33 @@ func (sc *Script) cmdSet(args []string) error {
 		}
 		codec.PutUint32(param.Data[:], uint32(vv))
 
+	case "i32", "int32":
+		vv, err := strconv.ParseInt(args[1], 10, 32)
+		if err != nil {
+			return err
+		}
+		codec.PutUint32(param.Data[:], uint32(vv))
+
 	default:
 		return fcsError{200, fmt.Sprintf("invalid value-type (%v)", vtype)}
 	}
 
 	return sc.motor.WriteParam(param)
+}
+
+func (sc *Script) cmdMotor(args []string) error {
+	switch len(args) {
+	case 0:
+		// get
+		return nil // FIXME(sbinet)
+	case 1:
+		// set
+		sc.motor = m702.New(args[0])
+		return nil
+	default:
+		return fcsError{200, fmt.Sprintf("invalid number of arguments (got=%d, want=1|2)", len(args))}
+	}
+	return nil
 }
 
 func (sc *Script) run(motor m702.Motor, r io.Reader) error {
@@ -108,8 +133,9 @@ func newScripter(motor m702.Motor) Script {
 	var script Script
 	script = Script{
 		cmds: map[string]scriptCmd{
-			"get": script.cmdGet,
-			"set": script.cmdSet,
+			"get":   script.cmdGet,
+			"set":   script.cmdSet,
+			"motor": script.cmdMotor,
 		},
 		motor: motor,
 	}

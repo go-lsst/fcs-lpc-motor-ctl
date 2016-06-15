@@ -128,12 +128,14 @@ window.onload = function() {
 		fcs.last_update = new Date();
 		var data = JSON.parse(event.data);
 		var motor = data.motor;
-		var update = document.getElementById("fcs-status-update");
-		if (update == null) {
+		var lastUpdate = document.getElementById("fcs-status-update");
+		if (lastUpdate == null) {
 			// main page, after credentials verification, not there yet...
 			return;
 		}
-		update.innerHTML=fcs.last_update.toUTCString();
+		var update = fcs.ready[motor] != data.ready;
+
+		lastUpdate.innerHTML=fcs.last_update.toUTCString();
 		fcs.refreshMon(data);
 		fcs.refreshWebcam(data.webcam);
 		// console.log("data:"+JSON.stringify(data));
@@ -159,17 +161,19 @@ window.onload = function() {
 			document.getElementById("fcs-status-"+motor+"-ready").innerHTML = "N/A";
 		}
 	
-		if (fcs.ready[motor] != data.ready) {
+		if (update) {
 			fcs.ready[motor] = data.ready;
-			document.getElementById("fcs-ctl-"+motor+"-ready-slider").value = fcs.ready[motor];
+			var name = "fcs-ctl-"+motor+"-ready";
+			var node = document.getElementById(name);
 			var ids = [
 				"fcs-ctl-"+motor+"-rotation-direction",
 				"fcs-ctl-"+motor+"-rpm",
 				"fcs-ctl-"+motor+"-angle-position",
 			];
-			var disabled = !fcs.ready[motor];
-			var raised = fcs.ready[motor];
+			var disabled = !data.ready;
+			var raised = data.ready;
 
+			console.log("setting disabled to: "+disabled);
 			for (var i = 0; i < ids.length; i++) {
 				var id = ids[i];
 				document.getElementById(id+"-slider").disabled = disabled;
