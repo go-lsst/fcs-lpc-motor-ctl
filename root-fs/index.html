@@ -165,7 +165,7 @@ window.onload = function() {
 		document.getElementById("fcs-status-"+motor+"-mode").innerHTML = data.mode;
 		document.getElementById("fcs-status-"+motor+"-mode").active = data.ready;
 	
-		if (update) {
+		if (update || true) {
 			fcs.ready[motor] = data.ready;
 			var ids = [
 				"fcs-ctl-"+motor+"-rpm",
