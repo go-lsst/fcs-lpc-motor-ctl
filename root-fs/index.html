@@ -153,9 +153,9 @@ window.onload = function() {
 		if (data.online) {
 			document.getElementById("fcs-status-"+motor+"-online").innerHTML = "Online";
 			if (data.ready) {
-				document.getElementById("fcs-status-"+motor+"-ready").innerHTML = "Ready";
+				document.getElementById("fcs-status-"+motor+"-ready").innerHTML = "Run";
 			} else {
-				document.getElementById("fcs-status-"+motor+"-ready").innerHTML = "Not Ready";
+				document.getElementById("fcs-status-"+motor+"-ready").innerHTML = "Stop";
 			}
 		} else {
 			document.getElementById("fcs-status-"+motor+"-online").innerHTML = "Offline";
