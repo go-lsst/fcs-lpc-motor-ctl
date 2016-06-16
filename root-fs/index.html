@@ -35,6 +35,7 @@ var fcs = {
 	chan: {
 		cmds: null,
 		data: null,
+		webcam: null,
 	},
 };
 
@@ -120,6 +121,7 @@ function getCookie(cname) {
 window.onload = function() {
 	fcs.chan.data = new WebSocket("ws://" + fcs.addr + "/data");
 	fcs.chan.cmds = new WebSocket("ws://" + fcs.addr + "/cmds");
+	fcs.chan.webcam = new WebSocket("ws://" + fcs.addr + "/video");
 
 	fcs.chan.data.onopen = function() {}
 	fcs.chan.data.onclose = function() {}
@@ -220,6 +222,13 @@ window.onload = function() {
 				break;
 		}
 	}
+
+	fcs.chan.webcam.onopen = function() {}
+	fcs.chan.webcam.onclose = function() {}
+
+	fcs.chan.webcam.onmessage = function(event) {
+	}
+
 }
 	</script>
 

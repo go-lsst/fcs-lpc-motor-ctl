@@ -70,6 +70,7 @@ func main() {
 	mux.HandleFunc("/webcam", srv.handleWebcam)
 	mux.Handle("/cmds", websocket.Handler(srv.cmdsHandler))
 	mux.Handle("/data", websocket.Handler(srv.dataHandler))
+	mux.Handle("/video", websocket.Handler(srv.videoHandler))
 	err := http.ListenAndServe(srv.Addr, mux)
 	if err != nil {
 		log.Fatal(err)
@@ -102,8 +103,9 @@ type server struct {
 		z motor
 	}
 
-	dataReg registry // clients interested in motor-statuses
-	cmdsReg registry // clients interested in sending/receiving motor commands
+	dataReg  registry // clients interested in motor-statuses
+	cmdsReg  registry // clients interested in sending/receiving motor commands
+	videoReg registry // clients interested in receiving webcam data
 
 	datac chan motorStatus
 }
@@ -159,6 +161,19 @@ func (srv *server) run() {
 	go srv.monitor()
 	for {
 		select {
+		case c := <-srv.videoReg.register:
+			srv.videoReg.clients[c] = true
+
+		case c := <-srv.videoReg.unregister:
+			if _, ok := srv.videoReg.clients[c]; ok {
+				delete(srv.videoReg.clients, c)
+				close(c.datac)
+				log.Printf(
+					"client disconnected [%v]\n",
+					c.ws.LocalAddr(),
+				)
+			}
+
 		case c := <-srv.dataReg.register:
 			srv.dataReg.clients[c] = true
 
@@ -320,6 +335,19 @@ func (srv *server) dataHandler(ws *websocket.Conn) {
 	c := &client{
 		srv:   srv,
 		reg:   &srv.dataReg,
+		datac: make(chan []byte, 256),
+		ws:    ws,
+	}
+	c.reg.register <- c
+	defer c.Release()
+
+	c.run()
+}
+
+func (srv *server) videoHandler(ws *websocket.Conn) {
+	c := &client{
+		srv:   srv,
+		reg:   &srv.videoReg,
 		datac: make(chan []byte, 256),
 		ws:    ws,
 	}
