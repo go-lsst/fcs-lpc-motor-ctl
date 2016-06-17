@@ -385,16 +385,16 @@ cmdLoop:
 			req.Type, req.Token, req.Name, req.Value, req.Cmds,
 		)
 		if acl == 0 {
-			wc, ok := srv.session.get(req.Token)
-			if wc.name == "" || !wc.auth || !ok {
-				websocket.JSON.Send(c.ws, cmdReply{Err: errUserAuth.Error(), Req: req})
+			usr, ok := srv.session.get(req.Token)
+			if usr.name == "" || !usr.auth || !ok {
+				srv.sendReply(c.ws, cmdReply{Err: errUserAuth.Error(), Req: req})
 				continue
 			}
 			acl++
-			c.setACL(wc.name)
+			c.setACL(usr.name)
 		}
 		if c.acl == 0 {
-			websocket.JSON.Send(c.ws, cmdReply{Err: errUserPerm.Error(), Req: req})
+			srv.sendReply(c.ws, cmdReply{Err: errUserPerm.Error(), Req: req})
 			continue
 		}
 
@@ -409,15 +409,27 @@ cmdLoop:
 			if req.Name == cmdReqUploadCmds {
 				srvMotor = &c.srv.motor.z // FIXME(sbinet)
 			} else {
-				websocket.JSON.Send(c.ws, cmdReply{Err: errInvalidMotorName.Error(), Req: req})
+				srv.sendReply(c.ws, cmdReply{Err: errInvalidMotorName.Error(), Req: req})
 				continue
 			}
 		default:
-			websocket.JSON.Send(c.ws, cmdReply{Err: errInvalidMotorName.Error(), Req: req})
+			srv.sendReply(c.ws, cmdReply{Err: errInvalidMotorName.Error(), Req: req})
 			continue
 		}
 		motor := m702.New(srvMotor.addr)
 		script := newScripter(motor)
+
+		{
+			conn, err := net.DialTimeout("tcp", srvMotor.addr, 1*time.Second)
+			if err != nil || conn == nil {
+				srv.sendReply(c.ws, cmdReply{Err: errMotorOffline.Error(), Req: req})
+				if conn != nil {
+					conn.Close()
+				}
+				continue
+			}
+			conn.Close()
+		}
 
 	retry:
 		params := make([]m702.Parameter, 1)
@@ -465,31 +477,19 @@ cmdLoop:
 		case cmdReqUploadCmds:
 			r := bytes.NewReader([]byte(req.Cmds))
 			err := script.run(motor, r)
+			reply := cmdReply{Req: req}
 			if err != nil {
-				websocket.JSON.Send(c.ws, cmdReply{Err: err.Error(), Req: req})
-			} else {
-				websocket.JSON.Send(c.ws, cmdReply{Err: "", Req: req})
+				reply.Err = err.Error()
 			}
+			srv.sendReply(c.ws, reply)
 			continue
 
 		default:
-			websocket.JSON.Send(c.ws, cmdReply{Err: errInvalidReq.Error(), Req: req})
-			return
+			srv.sendReply(c.ws, cmdReply{Err: errInvalidReq.Error(), Req: req})
+			continue
 		}
 
 		log.Printf("sending command %v to motor-%s %s...\n", params, srvMotor.name, srvMotor.addr)
-		{
-			conn, err := net.DialTimeout("tcp", srvMotor.addr, 1*time.Second)
-			if err != nil || conn == nil {
-				websocket.JSON.Send(c.ws, cmdReply{Err: errMotorOffline.Error(), Req: req})
-				if conn != nil {
-					conn.Close()
-				}
-				continue
-			}
-			conn.Close()
-		}
-
 		for _, p := range params {
 			err = motor.WriteParam(p)
 			if err != nil {
@@ -497,12 +497,19 @@ cmdLoop:
 				if err == io.EOF && nretries < maxRetries {
 					goto retry
 				}
-				websocket.JSON.Send(c.ws, cmdReply{Err: err.Error(), Req: req})
+				srv.sendReply(c.ws, cmdReply{Err: err.Error(), Req: req})
 				goto cmdLoop
 			}
 		}
-		websocket.JSON.Send(c.ws, cmdReply{Err: "", Req: req})
+		srv.sendReply(c.ws, cmdReply{Err: "", Req: req})
 	}
+}
+
+func (srv *server) sendReply(ws *websocket.Conn, reply cmdReply) {
+	log.Printf("reply: {err=%q, req={token=%q, type=%q, motor=%q, name=%q}}\n",
+		reply.Err, reply.Req.Token, reply.Req.Type, reply.Req.Motor, reply.Req.Name,
+	)
+	websocket.JSON.Send(ws, reply)
 }
 
 type client struct {
