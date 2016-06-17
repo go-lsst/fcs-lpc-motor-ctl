@@ -49,17 +49,6 @@
 	}
 		</style>
 
-		<!--
-		<login-polyform on-login="fcs_handle_login" username="visitor" method="post" action="/login" passwordValidationPattern=".*">
-			<img avatar src="http://www.lsst.org/sites/default/files/logo_1.png" alt="avatar"/>
-		</login-polyform>
-
-
-		<FORM>
-<INPUT TYPE="button" onClick="history.go(0)" VALUE="Refresh">
-</FORM>
-		-->
-
 		<form method="post" action="/login">
 			<img avatar src="http://www.lsst.org/sites/default/files/logo_1.png" alt="avatar"/>
 			<paper-input name="username" label="User" value="visitor" required ></paper-input>
@@ -83,6 +72,44 @@
 		},
 		passwordValidationPattern: ".*?",
 		passwordErrorMessage: "booo",
+	});
+	</script>
+</dom-module>
+
+<dom-module id="fcs-lpc-motor-logout">
+	<template>
+		<style>
+    :host {
+      display: block;
+      box-sizing: border-box;
+      text-align: center;
+      margin: 5px;
+      max-width: 250px;
+      min-width: 200px;
+    }
+	button.no-style {
+		-webkit-appearance: none;
+		border: 0;
+		padding: 0;
+		background: transparent;
+	}
+	paper-button.red {
+		height: 41.375px;
+		width:  80px;
+		background-color: var(--paper-red-500);
+		color: white;
+	}
+
+		</style>
+
+		<form method="post" action="/logout">
+			<button class="no-style" type="submit"><paper-button raised class="red">Logout</paper-button></button>
+		</form>
+	</template>
+
+	<script>
+	Polymer({
+		is:"fcs-lpc-motor-logout",
 	});
 	</script>
 </dom-module>
@@ -160,6 +187,7 @@
 			<paper-toolbar>
 				<paper-icon-button icon="menu" paper-drawer-toggle></paper-icon-button>
 				<div class="spacer title center">LSST FCS Motors</div>
+				<fcs-lpc-motor-logout></fcs-lpc-motor-logout>
 			</paper-toolbar>
 
 			<div class="content" id="fcs-main-container">

@@ -67,6 +67,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.Handle("/", srv)
 	mux.HandleFunc("/login", srv.handleLogin)
+	mux.HandleFunc("/logout", srv.handleLogout)
 	mux.HandleFunc("/webcam", srv.handleWebcam)
 	mux.Handle("/cmds", websocket.Handler(srv.cmdsHandler))
 	mux.Handle("/data", websocket.Handler(srv.dataHandler))

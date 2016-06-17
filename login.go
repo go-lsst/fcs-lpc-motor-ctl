@@ -85,6 +85,24 @@ func (srv *server) handleLogin(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
+func (srv *server) handleLogout(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "GET" {
+		fmt.Fprintf(w, loginPage, "")
+		return
+	}
+	cookie, err := r.Cookie("FCS_TOKEN")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	srv.session.del(cookie.Value)
+	// delete cookie now.
+	cookie.MaxAge = -1
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
 func (srv *server) authenticate(user, pass string) bool {
 	v, ok := srv.session.password(user)
 	if !ok {
@@ -169,5 +187,11 @@ func (reg *authRegistry) get(cookie string) (webClient, bool) {
 func (reg *authRegistry) set(cookie string, client webClient) {
 	reg.mu.Lock()
 	reg.store[cookie] = client
+	reg.mu.Unlock()
+}
+
+func (reg *authRegistry) del(cookie string) {
+	reg.mu.Lock()
+	delete(reg.store, cookie)
 	reg.mu.Unlock()
 }
