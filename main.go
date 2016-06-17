@@ -380,6 +380,7 @@ cmdLoop:
 			log.Printf("error rcv: %v\n", err)
 			return
 		}
+		req.tstamp = time.Now().UTC()
 		log.Printf(
 			"received: {type=%q token=%q name=%q value=%v cmds=%q}\n",
 			req.Type, req.Token, req.Name, req.Value, req.Cmds,
@@ -554,12 +555,13 @@ func (c *client) setACL(user string) {
 }
 
 type cmdRequest struct {
-	Motor string  `json:"motor"` // Motor is the motor name "x" | "z"
-	Type  string  `json:"type"`
-	Token string  `json:"token"` // Token is the web-client requestor
-	Name  string  `json:"name"`
-	Value float64 `json:"value"`
-	Cmds  string  `json:"cmds"`
+	Motor  string  `json:"motor"` // Motor is the motor name "x" | "z"
+	Type   string  `json:"type"`
+	Token  string  `json:"token"` // Token is the web-client requestor
+	Name   string  `json:"name"`
+	Value  float64 `json:"value"`
+	Cmds   string  `json:"cmds"`
+	tstamp time.Time
 }
 
 type cmdReply struct {
