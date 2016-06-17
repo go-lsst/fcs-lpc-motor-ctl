@@ -130,14 +130,13 @@ window.onload = function() {
 		fcs.last_update = new Date();
 		var data = JSON.parse(event.data);
 		var motor = data.motor;
-		var lastUpdate = document.getElementById("fcs-status-update");
-		if (lastUpdate == null) {
+		var update = document.getElementById("fcs-status-update");
+		if (update == null) {
 			// main page, after credentials verification, not there yet...
 			return;
 		}
-		var update = fcs.ready[motor] != data.ready;
 
-		lastUpdate.innerHTML=fcs.last_update.toUTCString();
+		update.innerHTML=fcs.last_update.toUTCString();
 		fcs.refreshMon(data);
 		fcs.refreshWebcam(data.webcam);
 		// console.log("data:"+JSON.stringify(data));
@@ -165,21 +164,19 @@ window.onload = function() {
 		document.getElementById("fcs-status-"+motor+"-mode").innerHTML = data.mode;
 		document.getElementById("fcs-status-"+motor+"-mode").active = data.ready;
 	
-		if (update || true) {
-			fcs.ready[motor] = data.ready;
-			var ids = [
-				"fcs-ctl-"+motor+"-rpm",
-				"fcs-ctl-"+motor+"-angle-position",
-			];
-			var disabled = data.mode != "random";
-			var raised = data.mode == "random";
+		fcs.ready[motor] = data.ready;
+		var ids = [
+			"fcs-ctl-"+motor+"-rpm",
+			"fcs-ctl-"+motor+"-angle-position",
+		];
+		var disabled = data.mode != "random" || !data.ready;
+		var raised = data.mode == "random" && data.ready;
 
-			for (var i = 0; i < ids.length; i++) {
-				var id = ids[i];
-				document.getElementById(id+"-slider").disabled = disabled;
-				document.getElementById(id+"-submit").disabled = disabled;
-				document.getElementById(id+"-submit").raised = raised;
-			}
+		for (var i = 0; i < ids.length; i++) {
+			var id = ids[i];
+			document.getElementById(id+"-slider").disabled = disabled;
+			document.getElementById(id+"-submit").disabled = disabled;
+			document.getElementById(id+"-submit").raised = raised;
 		}
 	}
 
