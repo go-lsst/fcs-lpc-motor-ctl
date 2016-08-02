@@ -1,10 +1,10 @@
 [Unit]
 Description=FCS LPC Motor Control service
+Requires=network-online.target
 
 [Service]
 WorkingDirectory=/srv/lsst/fcs-lpc-motor-ctl
 ExecStart=/srv/lsst/fcs-lpc-motor-ctl/fcs-lpc-motor-ctl
-Requires=network-online.target
 
 [Install]
 WantedBy=multi-user.target
