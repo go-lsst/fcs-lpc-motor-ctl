@@ -265,7 +265,7 @@ func (srv *server) publishData() {
 		}
 
 		{
-			c, err := net.DialTimeout("tcp", motor.addr, 2*time.Second)
+			c, err := net.DialTimeout("tcp", motor.addr, 5*time.Second)
 			if err != nil || c == nil {
 				motor.online = false
 				log.Printf("-- motor-%v: offline (err=%v)\n", motor.name, err)
