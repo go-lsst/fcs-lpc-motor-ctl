@@ -214,6 +214,10 @@ func (srv *server) run() {
 			}
 
 		case data := <-srv.datac:
+			if len(srv.dataReg.clients) == 0 {
+				// log.Printf("no client connected")
+				continue
+			}
 			dataBuf := new(bytes.Buffer)
 			err := json.NewEncoder(dataBuf).Encode(data)
 			if err != nil {
