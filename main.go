@@ -45,8 +45,9 @@ const (
 )
 
 var (
-	codec    = binary.BigEndian
-	addrFlag = flag.String("addr", "", "address:port to serve web-app")
+	codec     = binary.BigEndian
+	addrFlag  = flag.String("addr", "", "address:port to serve web-app")
+	localFlag = flag.Bool("local", false, "enable/disable local IPs")
 
 	errMotorOffline     = fcsError{1, "fcs: motor OFFLINE"}
 	errMotorHWLock      = fcsError{2, "fcs: motor HW-safety enabled"}
@@ -132,8 +133,13 @@ func newServer() *server {
 		datac:   make(chan motorStatus),
 	}
 
-	srv.motor.x = newMotor("x", "195.221.117.245:5021") // master-x
-	srv.motor.z = newMotor("z", "195.221.117.245:5023") // master-z
+	if !*localFlag {
+		srv.motor.x = newMotor("x", "195.221.117.245:5021") // master-x
+		srv.motor.z = newMotor("z", "195.221.117.245:5023") // master-z
+	} else {
+		srv.motor.x = newMotor("x", "192.168.0.21:502") // master-x
+		srv.motor.z = newMotor("z", "192.168.0.23:502") // master-z
+	}
 
 	go srv.run()
 
