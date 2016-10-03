@@ -38,6 +38,9 @@ const (
 	paramTemp1    = "0.07.005"
 	paramTemp2    = "0.07.006"
 	paramTemp3    = "0.07.034"
+
+	paramHWSafety = "0.02.002" // 0: Auto (s/w) 1: Manual
+	paramSTO      = "0.08.040" // 0: STOP, 1:OK
 )
 
 var (
@@ -45,7 +48,9 @@ var (
 	addrFlag = flag.String("addr", "", "address:port to serve web-app")
 
 	errMotorOffline     = fcsError{1, "fcs: motor OFFLINE"}
-	errOpNotSupported   = fcsError{2, "fcs: operation not supported"}
+	errMotorHWLock      = fcsError{2, "fcs: motor HW-safety enabled"}
+	errMotorSTO         = fcsError{3, "fcs: motor safe torque OFF enabled"}
+	errOpNotSupported   = fcsError{20, "fcs: operation not supported"}
 	errUserAuth         = fcsError{100, "fcs: user not authenticated"}
 	errUserPerm         = fcsError{101, "fcs: insufficient user permissions"}
 	errInvalidReq       = fcsError{102, "fcs: invalid request"}
