@@ -29,6 +29,8 @@ func newMotor(name, addr string) motor {
 
 type motorParams struct {
 	Ready      m702.Parameter
+	HWSafety   m702.Parameter
+	STO        m702.Parameter
 	Home       m702.Parameter
 	Random     m702.Parameter
 	RPMs       m702.Parameter
@@ -40,6 +42,8 @@ type motorParams struct {
 func newMotorParams() motorParams {
 	return motorParams{
 		Ready:      newParameter(paramReadyRead),
+		HWSafety:   newParameter(paramHWSafety),
+		STO:        newParameter(paramSTO),
 		Home:       newParameter(paramHome),
 		Random:     newParameter(paramRandom),
 		RPMs:       newParameter(paramRPMs),

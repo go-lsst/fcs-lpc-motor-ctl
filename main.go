@@ -286,6 +286,8 @@ func (srv *server) publishData() {
 		mm := m702.New(motor.addr)
 		for _, p := range []*m702.Parameter{
 			&motor.params.Ready,
+			&motor.params.HWSafety,
+			&motor.params.STO,
 			&motor.params.Home,
 			&motor.params.Random,
 			&motor.params.RPMs,
@@ -323,6 +325,13 @@ func (srv *server) publishData() {
 				mon.mode = motorModeHome
 			case codec.Uint32(motor.params.Random.Data[:]) == 1:
 				mon.mode = motorModeRandom
+			}
+		} else {
+			switch {
+			case codec.Uint32(motor.params.HWSafety.Data[:]) == 1:
+				mon.mode = motorModeHWSafety
+			case codec.Uint32(motor.params.STO.Data[:]) == 0: // fields with negation...
+				mon.mode = motorModeSTO
 			}
 		}
 		motor.histos.rows = append(motor.histos.rows, mon)
