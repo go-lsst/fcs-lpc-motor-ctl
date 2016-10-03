@@ -245,6 +245,7 @@ func (srv *server) motors() []*motor {
 
 func (srv *server) publishData() {
 	for imotor, motor := range srv.motors() {
+		log.Printf("-- publish data motor-%v (%s)...\n", motor.name, motor.addr)
 		// make sure the amount of memory used for the histos is under control
 		switch {
 		case len(motor.histos.rows) >= 128:
@@ -267,6 +268,7 @@ func (srv *server) publishData() {
 			c, err := net.DialTimeout("tcp", motor.addr, 2*time.Second)
 			if err != nil || c == nil {
 				motor.online = false
+				log.Printf("-- motor-%v: offline (err=%v)\n", motor.name, err)
 			} else {
 				motor.online = true
 			}
@@ -283,6 +285,7 @@ func (srv *server) publishData() {
 					Histos: plots,
 					Webcam: srv.fetchWebcamImage(),
 				}
+				log.Printf("-- motor-%v: continue\n", motor.name)
 				continue
 			}
 		}
@@ -341,6 +344,7 @@ func (srv *server) publishData() {
 		motor.histos.rows = append(motor.histos.rows, mon)
 		plots := srv.makeMonPlots(imotor)
 
+		log.Printf("-- %s: online=%v ready=%v mode=%v\n", motor.name, motor.online, ready, mon.Mode())
 		status := motorStatus{
 			Motor:  motor.name,
 			Online: motor.online,
