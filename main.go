@@ -28,16 +28,17 @@ import (
 //go:generate go-bindata-assetfs -prefix=root-fs/ ./root-fs
 
 const (
-	paramReady    = "0.08.015"
-	paramHome     = "2.02.017"
-	paramRandom   = "2.02.011"
-	paramRPMs     = "0.20.022"
-	paramWritePos = "3.70.000"
-	paramReadPos  = "0.18.002"
-	paramTemp0    = "0.07.004"
-	paramTemp1    = "0.07.005"
-	paramTemp2    = "0.07.006"
-	paramTemp3    = "0.07.034"
+	paramReadyRead  = "0.08.005"
+	paramReadyWrite = "0.08.015"
+	paramHome       = "2.02.017"
+	paramRandom     = "2.02.011"
+	paramRPMs       = "0.20.022"
+	paramWritePos   = "3.70.000"
+	paramReadPos    = "0.18.002"
+	paramTemp0      = "0.07.004"
+	paramTemp1      = "0.07.005"
+	paramTemp2      = "0.07.006"
+	paramTemp3      = "0.07.034"
 
 	paramHWSafety = "0.02.002" // 0: Auto (s/w) 1: Manual
 	paramSTO      = "0.08.040" // 0: STOP, 1:OK
@@ -441,15 +442,15 @@ cmdLoop:
 		params := make([]m702.Parameter, 1)
 		switch req.Name {
 		case cmdReqReady:
-			params[0] = newParameter(paramReady)
+			params[0] = newParameter(paramReadyRead)
 			codec.PutUint32(params[0].Data[:], uint32(req.Value))
 
 		case cmdReqFindHome:
 			params = append([]m702.Parameter{},
-				newParameter(paramReady),
+				newParameter(paramReadyRead),
 				newParameter(paramRandom),
 				newParameter(paramHome),
-				newParameter(paramReady),
+				newParameter(paramReadyRead),
 			)
 
 			codec.PutUint32(params[0].Data[:], 0)
@@ -459,11 +460,11 @@ cmdLoop:
 
 		case cmdReqRandom:
 			params = append([]m702.Parameter{},
-				newParameter(paramReady),
+				newParameter(paramReadyRead),
 				newParameter(paramRandom),
 				newParameter(paramHome),
 				newParameter(paramWritePos),
-				newParameter(paramReady),
+				newParameter(paramReadyRead),
 			)
 
 			codec.PutUint32(params[0].Data[:], 0)
