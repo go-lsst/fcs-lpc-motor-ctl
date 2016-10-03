@@ -316,13 +316,13 @@ func (srv *server) publishData() {
 		ready := codec.Uint32(motor.params.Ready.Data[:]) == 1
 		if motor.online {
 			if ready {
-				mon.mode = 1
+				mon.mode = motorModeReady
 			}
 			switch {
 			case codec.Uint32(motor.params.Home.Data[:]) == 1:
-				mon.mode = 2
+				mon.mode = motorModeHome
 			case codec.Uint32(motor.params.Random.Data[:]) == 1:
-				mon.mode = 3
+				mon.mode = motorModeRandom
 			}
 		}
 		motor.histos.rows = append(motor.histos.rows, mon)

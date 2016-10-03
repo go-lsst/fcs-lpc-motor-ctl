@@ -58,9 +58,20 @@ func newPlot(title, yaxis string, data ...plotter.XYer) (*plot.Plot, error) {
 	return p, nil
 }
 
+type motorMode byte
+
+const (
+	motorModeDefault motorMode = iota
+	motorModeReady
+	motorModeHWSafety
+	motorModeSTO
+	motorModeHome
+	motorModeRandom
+)
+
 type monData struct {
 	id    time.Time
-	mode  byte // (0=N/A,1=ready,2=home,3=random)
+	mode  motorMode
 	rpms  uint32
 	angle float64
 	temps [4]float64
@@ -93,13 +104,17 @@ func (mon *monData) write(buf []byte) {
 
 func (mon *monData) Mode() string {
 	switch mon.mode {
-	case 0:
+	case motorModeDefault:
 		return "N/A"
-	case 1:
+	case motorModeReady:
 		return "ready"
-	case 2:
+	case motorModeHWSafety:
+		return "h/w safety"
+	case motorModeSTO:
+		return "sto"
+	case motorModeHome:
 		return "home"
-	case 3:
+	case motorModeRandom:
 		return "random"
 	default:
 		panic(fmt.Errorf("invalid monData.mode=%v", mon.mode))
