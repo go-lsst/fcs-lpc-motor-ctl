@@ -263,7 +263,7 @@ func (srv *server) motors() []*motor {
 
 func (srv *server) publishData() {
 	for imotor, motor := range srv.motors() {
-		dbgPrintf("-- publish data motor-%v (%s)...\n", motor.name, motor.addr)
+		dbgPrintf("-- motor-%v (%s)...\n", motor.name, motor.addr)
 		// make sure the amount of memory used for the histos is under control
 		switch {
 		case len(motor.histos.rows) >= 128:
