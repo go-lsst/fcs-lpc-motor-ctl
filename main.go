@@ -467,6 +467,16 @@ cmdLoop:
 			conn.Close()
 		}
 
+		if srvMotor.isHWLocked() {
+			srv.sendReply(c.ws, cmdReply{Err: errMotorHWLock.Error(), Req: req})
+			continue
+		}
+
+		if srvMotor.isManual() {
+			srv.sendReply(c.ws, cmdReply{Err: errMotorManual.Error(), Req: req})
+			continue
+		}
+
 	retry:
 		params := make([]m702.Parameter, 1)
 		switch req.Name {
