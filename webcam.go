@@ -10,6 +10,13 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
+)
+
+var (
+	webcamClient = &http.Client{
+		Timeout: 500 * time.Millisecond,
+	}
 )
 
 func (srv *server) handleWebcam(w http.ResponseWriter, r *http.Request) {
@@ -36,7 +43,7 @@ func (srv *server) handleWebcam(w http.ResponseWriter, r *http.Request) {
 
 func (srv *server) fetchWebcamImage() string {
 	url := "http://" + srv.Addr + "/webcam"
-	resp, err := http.Get(url)
+	resp, err := webcamClient.Get(url)
 	if err != nil {
 		log.Printf("error fetching webcam image: %v\n", err)
 		return ""
