@@ -63,8 +63,8 @@ type motorMode byte
 const (
 	motorModeDefault motorMode = iota
 	motorModeReady
+	motorModeManualOverride
 	motorModeHWSafety
-	motorModeSTO
 	motorModeHome
 	motorModeRandom
 )
@@ -108,10 +108,10 @@ func (mon *monData) Mode() string {
 		return "N/A"
 	case motorModeReady:
 		return "ready"
+	case motorModeManualOverride:
+		return "manual"
 	case motorModeHWSafety:
 		return "h/w safety"
-	case motorModeSTO:
-		return "sto"
 	case motorModeHome:
 		return "home"
 	case motorModeRandom:

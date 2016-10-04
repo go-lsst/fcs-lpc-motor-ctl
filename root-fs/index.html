@@ -141,8 +141,9 @@ window.onload = function() {
 		fcs.refreshWebcam(data.webcam);
 		// console.log("data:"+JSON.stringify(data));
 		
+		var ready = data.status == "ready";
 		document.getElementById("fcs-status-"+motor+"-online").active = data.online;
-		document.getElementById("fcs-status-"+motor+"-ready").active = data.ready;
+		document.getElementById("fcs-status-"+motor+"-ready").active = ready;
 		document.getElementById("fcs-status-"+motor+"-rpms").innerHTML = data.rpms;
 		document.getElementById("fcs-status-"+motor+"-angle").innerHTML = data.angle + " °";
 		for (var i=0; i<data.temps.length;i++) {
@@ -151,26 +152,22 @@ window.onload = function() {
 
 		if (data.online) {
 			document.getElementById("fcs-status-"+motor+"-online").innerHTML = "Online";
-			if (data.ready) {
-				document.getElementById("fcs-status-"+motor+"-ready").innerHTML = "Run";
-			} else {
-				document.getElementById("fcs-status-"+motor+"-ready").innerHTML = "Stop";
-			}
+			document.getElementById("fcs-status-"+motor+"-ready").innerHTML = data.status;
 		} else {
 			document.getElementById("fcs-status-"+motor+"-online").innerHTML = "Offline";
 			document.getElementById("fcs-status-"+motor+"-ready").innerHTML = "N/A";
 		}
 
 		document.getElementById("fcs-status-"+motor+"-mode").innerHTML = data.mode;
-		document.getElementById("fcs-status-"+motor+"-mode").active = data.ready;
+		document.getElementById("fcs-status-"+motor+"-mode").active = ready;
 	
-		fcs.ready[motor] = data.ready;
+		fcs.ready[motor] = ready;
 		var ids = [
 			"fcs-ctl-"+motor+"-rpm",
 			"fcs-ctl-"+motor+"-angle-position",
 		];
-		var disabled = data.mode != "random" || !data.ready;
-		var raised = data.mode == "random" && data.ready;
+		var disabled = data.mode != "random" || !ready;
+		var raised = data.mode == "random" && ready;
 
 		for (var i = 0; i < ids.length; i++) {
 			var id = ids[i];

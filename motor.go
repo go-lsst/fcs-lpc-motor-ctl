@@ -28,9 +28,9 @@ func newMotor(name, addr string) motor {
 }
 
 type motorParams struct {
-	Ready      m702.Parameter
+	Manual     m702.Parameter
+	CmdReady   m702.Parameter
 	HWSafety   m702.Parameter
-	STO        m702.Parameter
 	Home       m702.Parameter
 	Random     m702.Parameter
 	RPMs       m702.Parameter
@@ -41,9 +41,9 @@ type motorParams struct {
 
 func newMotorParams() motorParams {
 	return motorParams{
-		Ready:      newParameter(paramReady),
+		Manual:     newParameter(paramManualOverride),
+		CmdReady:   newParameter(paramCmdReady),
 		HWSafety:   newParameter(paramHWSafety),
-		STO:        newParameter(paramSTO),
 		Home:       newParameter(paramHome),
 		Random:     newParameter(paramRandom),
 		RPMs:       newParameter(paramRPMs),
@@ -65,11 +65,11 @@ type motorHistos struct {
 	RPMs []float64
 }
 
-type motorStatus struct {
+type motorInfos struct {
 	Motor  string            `json:"motor"` // x,z
 	Online bool              `json:"online"`
-	Ready  bool              `json:"ready"`
-	Mode   string            `json:"mode"` // N/A,ready,home,random
+	Status string            `json:"status"` // N/A,manual,hw-safety,ready
+	Mode   string            `json:"mode"`   // N/A,ready,home,random
 	RPMs   int               `json:"rpms"`
 	Angle  int               `json:"angle"`
 	Temps  [4]float64        `json:"temps"`
