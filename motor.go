@@ -5,6 +5,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/go-lsst/ncs/drivers/m702"
 )
 
@@ -14,6 +16,33 @@ type motor struct {
 	params motorParams
 	histos motorHistos
 	online bool // whether motors are online/connected
+}
+
+func (m *motor) poll() []error {
+	var errs []error
+	mm := m702.New(m.addr)
+	for _, p := range []*m702.Parameter{
+		&m.params.Manual,
+		&m.params.HWSafety,
+		&m.params.Home,
+		&m.params.Random,
+		&m.params.RPMs,
+		&m.params.ReadAngle,
+		&m.params.Temps[0],
+		&m.params.Temps[1],
+		&m.params.Temps[2],
+		&m.params.Temps[3],
+	} {
+		err := mm.ReadParam(p)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("error reading %v (motor-%s) Pr-%v: %v\n", m.addr, m.name, *p, err))
+		}
+	}
+	return errs
+}
+
+func (m *motor) isManual() bool {
+	return codec.Uint32(m.params.Manual.Data[:]) == 1
 }
 
 func newMotor(name, addr string) motor {

@@ -308,22 +308,10 @@ func (srv *server) publishData() {
 			}
 		}
 
-		mm := m702.New(motor.addr)
-		for _, p := range []*m702.Parameter{
-			&motor.params.Manual,
-			&motor.params.HWSafety,
-			&motor.params.Home,
-			&motor.params.Random,
-			&motor.params.RPMs,
-			&motor.params.ReadAngle,
-			&motor.params.Temps[0],
-			&motor.params.Temps[1],
-			&motor.params.Temps[2],
-			&motor.params.Temps[3],
-		} {
-			err := mm.ReadParam(p)
-			if err != nil {
-				log.Printf("error reading %v (motor-%s) Pr-%v: %v\n", motor.addr, motor.name, *p, err)
+		errs := motor.poll()
+		if len(errs) > 0 {
+			for _, err := range errs {
+				log.Printf("%v", err)
 			}
 		}
 
@@ -341,7 +329,7 @@ func (srv *server) publishData() {
 
 		status := "N/A"
 
-		manual := codec.Uint32(motor.params.Manual.Data[:]) == 1
+		manual := motor.isManual()
 		ready := !manual
 		hwsafetyON := codec.Uint32(motor.params.HWSafety.Data[:]) == 0
 
