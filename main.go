@@ -45,9 +45,10 @@ const (
 )
 
 var (
-	codec     = binary.BigEndian
-	addrFlag  = flag.String("addr", "", "address:port to serve web-app")
-	localFlag = flag.Bool("local", false, "enable/disable local IPs")
+	codec       = binary.BigEndian
+	addrFlag    = flag.String("addr", "", "address:port to serve web-app")
+	localFlag   = flag.Bool("local", false, "enable/disable local IPs")
+	verboseFlag = flag.Bool("verbose", false, "enable/disable verbose mode")
 
 	errMotorOffline     = fcsError{1, "fcs: motor OFFLINE"}
 	errMotorHWLock      = fcsError{2, "fcs: motor HW-safety enabled"}
@@ -58,6 +59,12 @@ var (
 	errInvalidReq       = fcsError{102, "fcs: invalid request"}
 	errInvalidMotorName = fcsError{200, "fcs: invalid motor name"}
 )
+
+func dbgPrintf(format string, args ...interface{}) {
+	if *verboseFlag {
+		log.Printf(format, args...)
+	}
+}
 
 func newParameter(name string) m702.Parameter {
 	p, err := m702.NewParameter(name)
@@ -173,11 +180,14 @@ func (srv *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (srv *server) run() {
 	go srv.monitor()
 	for {
+		dbgPrintf("run-tick\n")
 		select {
 		case c := <-srv.videoReg.register:
+			dbgPrintf("video-register")
 			srv.videoReg.clients[c] = true
 
 		case c := <-srv.videoReg.unregister:
+			dbgPrintf("video-unregister")
 			if _, ok := srv.videoReg.clients[c]; ok {
 				delete(srv.videoReg.clients, c)
 				close(c.datac)
@@ -188,9 +198,11 @@ func (srv *server) run() {
 			}
 
 		case c := <-srv.dataReg.register:
+			dbgPrintf("data-register")
 			srv.dataReg.clients[c] = true
 
 		case c := <-srv.dataReg.unregister:
+			dbgPrintf("data-unregister")
 			if _, ok := srv.dataReg.clients[c]; ok {
 				delete(srv.dataReg.clients, c)
 				close(c.datac)
@@ -201,9 +213,11 @@ func (srv *server) run() {
 			}
 
 		case c := <-srv.cmdsReg.register:
+			dbgPrintf("cmds-register")
 			srv.cmdsReg.clients[c] = true
 
 		case c := <-srv.cmdsReg.unregister:
+			dbgPrintf("cmds-unregister")
 			if _, ok := srv.cmdsReg.clients[c]; ok {
 				delete(srv.cmdsReg.clients, c)
 				close(c.datac)
@@ -214,8 +228,9 @@ func (srv *server) run() {
 			}
 
 		case data := <-srv.datac:
+			dbgPrintf("data on srv.datac\n")
 			if len(srv.dataReg.clients) == 0 {
-				// log.Printf("no client connected")
+				dbgPrintf("no client connected")
 				continue
 			}
 			dataBuf := new(bytes.Buffer)
@@ -233,6 +248,7 @@ func (srv *server) run() {
 				}
 			}
 		}
+		dbgPrintf("run-untick")
 	}
 }
 
@@ -245,7 +261,7 @@ func (srv *server) motors() []*motor {
 
 func (srv *server) publishData() {
 	for imotor, motor := range srv.motors() {
-		// log.Printf("-- publish data motor-%v (%s)...\n", motor.name, motor.addr)
+		dbgPrintf("-- publish data motor-%v (%s)...\n", motor.name, motor.addr)
 		// make sure the amount of memory used for the histos is under control
 		switch {
 		case len(motor.histos.rows) >= 128:
@@ -285,7 +301,7 @@ func (srv *server) publishData() {
 					Histos: plots,
 					Webcam: srv.fetchWebcamImage(),
 				}
-				log.Printf("-- motor-%v: continue\n", motor.name)
+				dbgPrintf("-- motor-%v: continue\n", motor.name)
 				continue
 			}
 		}
@@ -341,7 +357,7 @@ func (srv *server) publishData() {
 		motor.histos.rows = append(motor.histos.rows, mon)
 		plots := srv.makeMonPlots(imotor)
 
-		// log.Printf("-- %s: online=%v ready=%v mode=%v\n", motor.name, motor.online, ready, mon.Mode())
+		dbgPrintf("-- %s: online=%v ready=%v mode=%v\n", motor.name, motor.online, ready, mon.Mode())
 		status := motorStatus{
 			Motor:  motor.name,
 			Online: motor.online,
@@ -355,6 +371,7 @@ func (srv *server) publishData() {
 		}
 
 		srv.datac <- status
+		dbgPrintf("-- %s: done\n", motor.name)
 	}
 }
 
