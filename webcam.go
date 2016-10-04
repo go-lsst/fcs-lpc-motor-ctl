@@ -13,7 +13,7 @@ import (
 )
 
 func (srv *server) handleWebcam(w http.ResponseWriter, r *http.Request) {
-	img, err := http.Get("http://195.221.117.245:80/axis-cgi/jpg/image.cgi")
+	img, err := http.Get("http://" + srv.webcam + "/axis-cgi/jpg/image.cgi")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

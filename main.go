@@ -106,9 +106,10 @@ func newRegistry() registry {
 }
 
 type server struct {
-	Addr string
-	fs   http.Handler
-	tmpl *template.Template
+	Addr   string
+	webcam string // address:port of webcam CGI endpoint
+	fs     http.Handler
+	tmpl   *template.Template
 
 	session *authRegistry
 
@@ -142,9 +143,11 @@ func newServer() *server {
 	if !*localFlag {
 		srv.motor.x = newMotor("x", "195.221.117.245:5021") // master-x
 		srv.motor.z = newMotor("z", "195.221.117.245:5023") // master-z
+		srv.webcam = "195.221.117.245:80"
 	} else {
 		srv.motor.x = newMotor("x", "192.168.0.21:502") // master-x
 		srv.motor.z = newMotor("z", "192.168.0.23:502") // master-z
+		srv.webcam = "192.168.0.30:80"
 	}
 
 	go srv.run()
