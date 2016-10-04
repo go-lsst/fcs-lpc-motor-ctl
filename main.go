@@ -446,12 +446,8 @@ cmdLoop:
 		case "z":
 			srvMotor = &c.srv.motor.z
 		case "":
-			if req.Name == cmdReqUploadCmds {
-				srvMotor = &c.srv.motor.z // FIXME(sbinet)
-			} else {
-				srv.sendReply(c.ws, cmdReply{Err: errInvalidMotorName.Error(), Req: req})
-				continue
-			}
+			srv.sendReply(c.ws, cmdReply{Err: errInvalidMotorName.Error(), Req: req})
+			continue
 		default:
 			srv.sendReply(c.ws, cmdReply{Err: errInvalidMotorName.Error(), Req: req})
 			continue
