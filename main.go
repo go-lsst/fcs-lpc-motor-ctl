@@ -51,7 +51,7 @@ var (
 
 	errMotorOffline     = fcsError{1, "fcs: motor OFFLINE"}
 	errMotorHWLock      = fcsError{2, "fcs: motor HW-safety enabled"}
-	errMotorSTO         = fcsError{3, "fcs: motor safe torque OFF enabled"}
+	errMotorManual      = fcsError{3, "fcs: motor manual-mode enabled"}
 	errOpNotSupported   = fcsError{20, "fcs: operation not supported"}
 	errUserAuth         = fcsError{100, "fcs: user not authenticated"}
 	errUserPerm         = fcsError{101, "fcs: insufficient user permissions"}
@@ -315,10 +315,19 @@ func (srv *server) publishData() {
 			}
 		}
 
+		if motor.isManual() {
+			// make sure we won't override what manual-mode did
+			// when we go back to sw-mode/ready-mode
+			err := motor.standby()
+			if err != nil {
+				log.Printf("-- motor-%v: standby: %v\n", motor.name, err)
+			}
+		}
+
 		mon := monData{
 			id:    time.Now(),
-			rpms:  codec.Uint32(motor.params.RPMs.Data[:]),
-			angle: float64(int32(codec.Uint32(motor.params.ReadAngle.Data[:]))) * 0.1,
+			rpms:  motor.rpms(),
+			angle: motor.angle(),
 			temps: [4]float64{
 				float64(codec.Uint32(motor.params.Temps[0].Data[:])),
 				float64(codec.Uint32(motor.params.Temps[1].Data[:])),
@@ -331,7 +340,7 @@ func (srv *server) publishData() {
 
 		manual := motor.isManual()
 		ready := !manual
-		hwsafetyON := codec.Uint32(motor.params.HWSafety.Data[:]) == 0
+		hwsafetyON := motor.isHWLocked()
 
 		switch {
 		case hwsafetyON:
@@ -446,12 +455,8 @@ cmdLoop:
 		case "z":
 			srvMotor = &c.srv.motor.z
 		case "":
-			if req.Name == cmdReqUploadCmds {
-				srvMotor = &c.srv.motor.z // FIXME(sbinet)
-			} else {
-				srv.sendReply(c.ws, cmdReply{Err: errInvalidMotorName.Error(), Req: req})
-				continue
-			}
+			srv.sendReply(c.ws, cmdReply{Err: errInvalidMotorName.Error(), Req: req})
+			continue
 		default:
 			srv.sendReply(c.ws, cmdReply{Err: errInvalidMotorName.Error(), Req: req})
 			continue
@@ -471,14 +476,26 @@ cmdLoop:
 			conn.Close()
 		}
 
+		if srvMotor.isHWLocked() {
+			srv.sendReply(c.ws, cmdReply{Err: errMotorHWLock.Error(), Req: req})
+			continue
+		}
+
+		if srvMotor.isManual() {
+			srv.sendReply(c.ws, cmdReply{Err: errMotorManual.Error(), Req: req})
+			continue
+		}
+
 	retry:
 		params := make([]m702.Parameter, 1)
 		switch req.Name {
 		case cmdReqReady:
+			dbgPrintf("cmd-req-ready: %v\n", uint32(req.Value))
 			params[0] = newParameter(paramCmdReady)
 			codec.PutUint32(params[0].Data[:], uint32(req.Value))
 
 		case cmdReqFindHome:
+			dbgPrintf("cmd-req-find-home\n")
 			params = append([]m702.Parameter{},
 				newParameter(paramCmdReady),
 				newParameter(paramRandom),
@@ -492,29 +509,31 @@ cmdLoop:
 			codec.PutUint32(params[3].Data[:], 1)
 
 		case cmdReqRandom:
+			dbgPrintf("cmd-req-random\n")
 			params = append([]m702.Parameter{},
 				newParameter(paramCmdReady),
 				newParameter(paramRandom),
 				newParameter(paramHome),
-				newParameter(paramWritePos),
 				newParameter(paramCmdReady),
 			)
 
 			codec.PutUint32(params[0].Data[:], 0)
 			codec.PutUint32(params[1].Data[:], 1)
 			codec.PutUint32(params[2].Data[:], 0)
-			codec.PutUint32(params[3].Data[:], 0)
-			codec.PutUint32(params[4].Data[:], 1)
+			codec.PutUint32(params[3].Data[:], 1)
 
 		case cmdReqRPM:
+			dbgPrintf("cmd-req-rpm\n")
 			params[0] = newParameter(paramRPMs)
 			codec.PutUint32(params[0].Data[:], uint32(req.Value))
 
 		case cmdReqAnglePos:
+			dbgPrintf("cmd-req-angle-pos\n")
 			params[0] = newParameter(paramWritePos)
 			codec.PutUint32(params[0].Data[:], uint32(math.Floor(req.Value*10)))
 
 		case cmdReqUploadCmds:
+			dbgPrintf("cmd-req-upload-cmds\n")
 			r := bytes.NewReader([]byte(req.Cmds))
 			err := script.run(motor, r)
 			reply := cmdReply{Req: req}

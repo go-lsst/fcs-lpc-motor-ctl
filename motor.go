@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/go-lsst/ncs/drivers/m702"
 )
@@ -16,6 +17,9 @@ type motor struct {
 	params motorParams
 	histos motorHistos
 	online bool // whether motors are online/connected
+
+	mu    sync.RWMutex
+	dirty int // 0:ok 1:dirty. motor may be dirty when manual mode is enabled
 }
 
 func (m *motor) poll() []error {
@@ -38,11 +42,55 @@ func (m *motor) poll() []error {
 			errs = append(errs, fmt.Errorf("error reading %v (motor-%s) Pr-%v: %v\n", m.addr, m.name, *p, err))
 		}
 	}
+	if m.isManual() {
+		m.setDirty()
+	}
 	return errs
+}
+
+func (m *motor) isHWLocked() bool {
+	return codec.Uint32(m.params.HWSafety.Data[:]) == 0
 }
 
 func (m *motor) isManual() bool {
 	return codec.Uint32(m.params.Manual.Data[:]) == 1
+}
+
+func (m *motor) isDirty() bool {
+	m.mu.RLock()
+	o := m.dirty == 1
+	m.mu.RUnlock()
+	return o
+}
+
+func (m *motor) setDirty() {
+	m.mu.Lock()
+	m.dirty = 1
+	m.mu.Unlock()
+}
+
+func (m *motor) setClean() {
+	m.mu.Lock()
+	m.dirty = 0
+	m.mu.Unlock()
+}
+
+func (m *motor) rpms() uint32 {
+	return codec.Uint32(m.params.RPMs.Data[:])
+}
+
+func (m *motor) angle() float64 {
+	return float64(int32(codec.Uint32(m.params.ReadAngle.Data[:]))) * 0.1
+}
+
+func (m *motor) standby() error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	pos := codec.Uint32(m.params.ReadAngle.Data[:])
+	mm := m702.New(m.addr)
+	param := newParameter(paramWritePos)
+	codec.PutUint32(param.Data[:], pos)
+	return mm.WriteParam(param)
 }
 
 func newMotor(name, addr string) motor {
