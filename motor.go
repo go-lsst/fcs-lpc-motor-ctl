@@ -41,7 +41,7 @@ type motorParams struct {
 
 func newMotorParams() motorParams {
 	return motorParams{
-		Ready:      newParameter(paramReadyRead),
+		Ready:      newParameter(paramReady),
 		HWSafety:   newParameter(paramHWSafety),
 		STO:        newParameter(paramSTO),
 		Home:       newParameter(paramHome),
