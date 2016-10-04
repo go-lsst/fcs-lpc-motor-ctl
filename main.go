@@ -341,7 +341,7 @@ func (srv *server) publishData() {
 
 		status := "N/A"
 
-		manual := codec.Uint32(motor.params.Manual.Data[:]) == 0
+		manual := codec.Uint32(motor.params.Manual.Data[:]) == 1
 		ready := !manual
 		hwsafetyON := codec.Uint32(motor.params.HWSafety.Data[:]) == 0
 

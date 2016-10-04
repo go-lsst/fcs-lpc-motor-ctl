@@ -87,7 +87,7 @@ func bowerJson() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "bower.json", size: 1606, mode: os.FileMode(420), modTime: time.Unix(1461078977, 0)}
+	info := bindataFileInfo{name: "bower.json", size: 1606, mode: os.FileMode(420), modTime: time.Unix(1465892593, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -107,7 +107,7 @@ func faviconIco() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "favicon.ico", size: 1150, mode: os.FileMode(420), modTime: time.Unix(1455561960, 0)}
+	info := bindataFileInfo{name: "favicon.ico", size: 1150, mode: os.FileMode(420), modTime: time.Unix(1465892593, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -127,7 +127,7 @@ func fcsLpcMotorHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "fcs-lpc-motor.html", size: 18661, mode: os.FileMode(420), modTime: time.Unix(1466178433, 0)}
+	info := bindataFileInfo{name: "fcs-lpc-motor.html", size: 18661, mode: os.FileMode(420), modTime: time.Unix(1475010558, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -147,7 +147,7 @@ func indexHtml() (*asset, error) {
 		return nil, err
 	}
 
-	info := bindataFileInfo{name: "index.html", size: 6991, mode: os.FileMode(420), modTime: time.Unix(1475578618, 0)}
+	info := bindataFileInfo{name: "index.html", size: 6991, mode: os.FileMode(420), modTime: time.Unix(1475582596, 0)}
 	a := &asset{bytes: bytes, info: info}
 	return a, nil
 }
@@ -306,7 +306,7 @@ func _filePath(dir, name string) string {
 
 func assetFS() *assetfs.AssetFS {
 	for k := range _bintree.Children {
-		return &assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, AssetInfo: AssetInfo, Prefix: k}
+		return &assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, Prefix: k}
 	}
 	panic("unreachable")
 }
