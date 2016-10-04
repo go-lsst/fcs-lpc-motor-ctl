@@ -475,10 +475,12 @@ cmdLoop:
 		params := make([]m702.Parameter, 1)
 		switch req.Name {
 		case cmdReqReady:
+			dbgPrintf("cmd-req-ready: %v\n", uint32(req.Value))
 			params[0] = newParameter(paramCmdReady)
 			codec.PutUint32(params[0].Data[:], uint32(req.Value))
 
 		case cmdReqFindHome:
+			dbgPrintf("cmd-req-find-home\n")
 			params = append([]m702.Parameter{},
 				newParameter(paramCmdReady),
 				newParameter(paramRandom),
@@ -492,6 +494,7 @@ cmdLoop:
 			codec.PutUint32(params[3].Data[:], 1)
 
 		case cmdReqRandom:
+			dbgPrintf("cmd-req-random\n")
 			params = append([]m702.Parameter{},
 				newParameter(paramCmdReady),
 				newParameter(paramRandom),
@@ -507,14 +510,17 @@ cmdLoop:
 			codec.PutUint32(params[4].Data[:], 1)
 
 		case cmdReqRPM:
+			dbgPrintf("cmd-req-rpm\n")
 			params[0] = newParameter(paramRPMs)
 			codec.PutUint32(params[0].Data[:], uint32(req.Value))
 
 		case cmdReqAnglePos:
+			dbgPrintf("cmd-req-angle-pos\n")
 			params[0] = newParameter(paramWritePos)
 			codec.PutUint32(params[0].Data[:], uint32(math.Floor(req.Value*10)))
 
 		case cmdReqUploadCmds:
+			dbgPrintf("cmd-req-upload-cmds\n")
 			r := bytes.NewReader([]byte(req.Cmds))
 			err := script.run(motor, r)
 			reply := cmdReply{Req: req}
