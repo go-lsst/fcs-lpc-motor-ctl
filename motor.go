@@ -6,6 +6,7 @@ package main
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/go-lsst/ncs/drivers/m702"
 )
@@ -16,6 +17,8 @@ type motor struct {
 	params motorParams
 	histos motorHistos
 	online bool // whether motors are online/connected
+
+	mu sync.RWMutex // see motor.updateAnglePos
 }
 
 func (m *motor) poll() []error {
@@ -55,6 +58,22 @@ func (m *motor) rpms() uint32 {
 
 func (m *motor) angle() float64 {
 	return float64(int32(codec.Uint32(m.params.ReadAngle.Data[:]))) * 0.1
+}
+
+// updateAnglePos is used to track the current motor position when
+// in manual-mode (and the operator is moving the motor using
+// a physical controller.)
+// This prevents the motor from going back to the last position (before
+// being moved via the manual-mode)
+func (m *motor) updateAnglePos() error {
+	m.mu.Lock()
+	pos := codec.Uint32(m.params.ReadAngle.Data[:])
+	mm := m702.New(m.addr)
+	param := newParameter(paramWritePos)
+	codec.PutUint32(param.Data[:], pos)
+	err := mm.WriteParam(param)
+	m.mu.Unlock()
+	return err
 }
 
 func newMotor(name, addr string) motor {

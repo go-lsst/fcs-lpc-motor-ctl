@@ -315,6 +315,15 @@ func (srv *server) publishData() {
 			}
 		}
 
+		if motor.isManual() {
+			// make sure we won't override what manual-mode did
+			// when we go back to sw-mode/ready-mode
+			err := motor.updateAnglePos()
+			if err != nil {
+				log.Printf("-- motor-%v: standby: %v\n", motor.name, err)
+			}
+		}
+
 		mon := monData{
 			id:    time.Now(),
 			rpms:  motor.rpms(),
@@ -505,15 +514,13 @@ cmdLoop:
 				newParameter(paramCmdReady),
 				newParameter(paramRandom),
 				newParameter(paramHome),
-				newParameter(paramWritePos),
 				newParameter(paramCmdReady),
 			)
 
 			codec.PutUint32(params[0].Data[:], 0)
 			codec.PutUint32(params[1].Data[:], 1)
 			codec.PutUint32(params[2].Data[:], 0)
-			codec.PutUint32(params[3].Data[:], 0)
-			codec.PutUint32(params[4].Data[:], 1)
+			codec.PutUint32(params[3].Data[:], 1)
 
 		case cmdReqRPM:
 			dbgPrintf("cmd-req-rpm\n")
