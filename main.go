@@ -106,14 +106,14 @@ func newRegistry() registry {
 }
 
 type server struct {
-	Addr   string
-	webcam string // address:port of webcam CGI endpoint
-	fs     http.Handler
-	tmpl   *template.Template
+	Addr string
+	fs   http.Handler
+	tmpl *template.Template
 
 	session *authRegistry
 
-	motor struct {
+	webcam string // address:port of webcam CGI endpoint
+	motor  struct {
 		x motor
 		z motor
 	}
