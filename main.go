@@ -245,7 +245,7 @@ func (srv *server) motors() []*motor {
 
 func (srv *server) publishData() {
 	for imotor, motor := range srv.motors() {
-		log.Printf("-- publish data motor-%v (%s)...\n", motor.name, motor.addr)
+		// log.Printf("-- publish data motor-%v (%s)...\n", motor.name, motor.addr)
 		// make sure the amount of memory used for the histos is under control
 		switch {
 		case len(motor.histos.rows) >= 128:
@@ -341,7 +341,7 @@ func (srv *server) publishData() {
 		motor.histos.rows = append(motor.histos.rows, mon)
 		plots := srv.makeMonPlots(imotor)
 
-		log.Printf("-- %s: online=%v ready=%v mode=%v\n", motor.name, motor.online, ready, mon.Mode())
+		// log.Printf("-- %s: online=%v ready=%v mode=%v\n", motor.name, motor.online, ready, mon.Mode())
 		status := motorStatus{
 			Motor:  motor.name,
 			Online: motor.online,
