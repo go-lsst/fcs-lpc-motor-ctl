@@ -51,7 +51,7 @@ var (
 
 	errMotorOffline     = fcsError{1, "fcs: motor OFFLINE"}
 	errMotorHWLock      = fcsError{2, "fcs: motor HW-safety enabled"}
-	errMotorSTO         = fcsError{3, "fcs: motor safe torque OFF enabled"}
+	errMotorManual      = fcsError{3, "fcs: motor manual-mode enabled"}
 	errOpNotSupported   = fcsError{20, "fcs: operation not supported"}
 	errUserAuth         = fcsError{100, "fcs: user not authenticated"}
 	errUserPerm         = fcsError{101, "fcs: insufficient user permissions"}
