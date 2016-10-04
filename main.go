@@ -317,8 +317,8 @@ func (srv *server) publishData() {
 
 		mon := monData{
 			id:    time.Now(),
-			rpms:  codec.Uint32(motor.params.RPMs.Data[:]),
-			angle: float64(int32(codec.Uint32(motor.params.ReadAngle.Data[:]))) * 0.1,
+			rpms:  motor.rpms(),
+			angle: motor.angle(),
 			temps: [4]float64{
 				float64(codec.Uint32(motor.params.Temps[0].Data[:])),
 				float64(codec.Uint32(motor.params.Temps[1].Data[:])),
@@ -331,7 +331,7 @@ func (srv *server) publishData() {
 
 		manual := motor.isManual()
 		ready := !manual
-		hwsafetyON := codec.Uint32(motor.params.HWSafety.Data[:]) == 0
+		hwsafetyON := motor.isHWLocked()
 
 		switch {
 		case hwsafetyON:

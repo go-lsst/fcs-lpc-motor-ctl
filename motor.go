@@ -41,8 +41,20 @@ func (m *motor) poll() []error {
 	return errs
 }
 
+func (m *motor) isHWLocked() bool {
+	return codec.Uint32(m.params.HWSafety.Data[:]) == 0
+}
+
 func (m *motor) isManual() bool {
 	return codec.Uint32(m.params.Manual.Data[:]) == 1
+}
+
+func (m *motor) rpms() uint32 {
+	return codec.Uint32(m.params.RPMs.Data[:])
+}
+
+func (m *motor) angle() float64 {
+	return float64(int32(codec.Uint32(m.params.ReadAngle.Data[:]))) * 0.1
 }
 
 func newMotor(name, addr string) motor {
