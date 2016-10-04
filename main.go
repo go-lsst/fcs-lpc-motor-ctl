@@ -350,14 +350,11 @@ func (srv *server) publishData() {
 			status = "h/w safety"
 		case manual:
 			status = "manual"
-		case !manual:
+		case ready:
 			status = "ready"
 		}
 
 		if motor.online {
-			if ready {
-				mon.mode = motorModeReady
-			}
 			switch {
 			case codec.Uint32(motor.params.Home.Data[:]) == 1:
 				mon.mode = motorModeHome
