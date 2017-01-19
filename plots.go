@@ -41,7 +41,7 @@ func newPlot(title, yaxis string, data ...plotter.XYer) (*plot.Plot, error) {
 
 	p.Title.Text = title
 	p.Y.Label.Text = yaxis
-	p.X.Tick.Marker = plot.UnixTimeTicks{Format: "2006-01-02\n15:04:05"}
+	p.X.Tick.Marker = plot.TimeTicks{Format: "2006-01-02\n15:04:05"}
 
 	for i, v := range data {
 		lines, points, err := plotter.NewLinePoints(v)
