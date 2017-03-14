@@ -48,6 +48,7 @@ var (
 	addrFlag    = flag.String("addr", "", "address:port to serve web-app")
 	localFlag   = flag.Bool("local", false, "enable/disable local IPs")
 	verboseFlag = flag.Bool("verbose", false, "enable/disable verbose mode")
+	webcamFlag  = flag.Bool("webcam", true, "enable/disable webcam")
 
 	errMotorOffline     = fcsError{1, "fcs: motor OFFLINE"}
 	errMotorHWLock      = fcsError{2, "fcs: motor HW-safety enabled"}
@@ -81,7 +82,9 @@ func main() {
 	mux.Handle("/", srv)
 	mux.HandleFunc("/login", srv.handleLogin)
 	mux.HandleFunc("/logout", srv.handleLogout)
-	mux.HandleFunc("/webcam", srv.handleWebcam)
+	if *webcamFlag {
+		mux.HandleFunc("/webcam", srv.handleWebcam)
+	}
 	mux.Handle("/cmds", websocket.Handler(srv.cmdsHandler))
 	mux.Handle("/data", websocket.Handler(srv.dataHandler))
 	mux.Handle("/video", websocket.Handler(srv.videoHandler))
@@ -144,11 +147,15 @@ func newServer() *server {
 		ip := "134.158.155.16"
 		srv.motor.x = newMotor("x", ip+":5021") // master-x
 		srv.motor.z = newMotor("z", ip+":5023") // master-z
-		srv.webcam = ip + ":80"
+		if *webcamFlag {
+			srv.webcam = ip + ":80"
+		}
 	} else {
 		srv.motor.x = newMotor("x", "192.168.0.21:502") // master-x
 		srv.motor.z = newMotor("z", "192.168.0.23:502") // master-z
-		srv.webcam = "192.168.0.30:80"
+		if *webcamFlag {
+			srv.webcam = "192.168.0.30:80"
+		}
 	}
 
 	go srv.run()

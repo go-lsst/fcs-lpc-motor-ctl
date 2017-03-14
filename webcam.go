@@ -42,6 +42,11 @@ func (srv *server) handleWebcam(w http.ResponseWriter, r *http.Request) {
 }
 
 func (srv *server) fetchWebcamImage() string {
+	if srv.webcam == "" {
+		// webcam was disabled
+		return ""
+	}
+
 	url := "http://" + srv.Addr + "/webcam"
 	resp, err := webcamClient.Get(url)
 	if err != nil {
