@@ -5,6 +5,7 @@ Requires=network-online.target
 [Service]
 WorkingDirectory=/srv/lsst/fcs-lpc-motor-ctl
 ExecStart=/srv/lsst/fcs-lpc-motor-ctl/fcs-lpc-motor-ctl
+Restart=always
 
 [Install]
 WantedBy=multi-user.target
