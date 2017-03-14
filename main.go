@@ -141,9 +141,10 @@ func newServer() *server {
 	}
 
 	if !*localFlag {
-		srv.motor.x = newMotor("x", "195.221.117.245:5021") // master-x
-		srv.motor.z = newMotor("z", "195.221.117.245:5023") // master-z
-		srv.webcam = "195.221.117.245:80"
+		ip := "134.158.155.16"
+		srv.motor.x = newMotor("x", ip+":5021") // master-x
+		srv.motor.z = newMotor("z", ip+":5023") // master-z
+		srv.webcam = ip + ":80"
 	} else {
 		srv.motor.x = newMotor("x", "192.168.0.21:502") // master-x
 		srv.motor.z = newMotor("z", "192.168.0.23:502") // master-z
