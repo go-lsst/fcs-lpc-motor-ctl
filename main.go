@@ -21,7 +21,6 @@ import (
 	"time"
 
 	"github.com/go-lsst/ncs/drivers/m702"
-
 	"golang.org/x/net/websocket"
 )
 
@@ -275,12 +274,9 @@ func (srv *server) publishData() {
 		// make sure the amount of memory used for the histos is under control
 		switch {
 		case len(motor.histos.rows) >= 128:
-			for i, row := range motor.histos.rows {
-				if i%2 == 0 {
-					motor.histos.rows[i/2] = row
-				}
-			}
-			motor.histos.rows = motor.histos.rows[:len(motor.histos.rows)/2]
+			n := len(motor.histos.rows)
+			copy(motor.histos.rows[:n/2], motor.histos.rows[n/2:n])
+			motor.histos.rows = motor.histos.rows[:n/2]
 		case len(motor.histos.rows) == 0:
 			// no-op
 		default:
