@@ -63,7 +63,7 @@ type motorMode byte
 const (
 	motorModeDefault motorMode = iota
 	motorModeHome
-	motorModeRandom
+	motorModePos
 )
 
 type monData struct {
@@ -105,8 +105,8 @@ func (mon *monData) Mode() string {
 		return "N/A"
 	case motorModeHome:
 		return "home"
-	case motorModeRandom:
-		return "random"
+	case motorModePos:
+		return "pos"
 	default:
 		panic(fmt.Errorf("invalid monData.mode=%v", mon.mode))
 	}

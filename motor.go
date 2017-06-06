@@ -28,7 +28,7 @@ func (m *motor) poll() []error {
 		&m.params.Manual,
 		&m.params.HWSafety,
 		&m.params.Home,
-		&m.params.Random,
+		&m.params.ModePos,
 		&m.params.RPMs,
 		&m.params.ReadAngle,
 		&m.params.Temps[0],
@@ -92,7 +92,7 @@ type motorParams struct {
 	CmdReady   m702.Parameter
 	HWSafety   m702.Parameter
 	Home       m702.Parameter
-	Random     m702.Parameter
+	ModePos    m702.Parameter
 	RPMs       m702.Parameter
 	WriteAngle m702.Parameter
 	ReadAngle  m702.Parameter
@@ -105,7 +105,7 @@ func newMotorParams() motorParams {
 		CmdReady:   newParameter(paramCmdReady),
 		HWSafety:   newParameter(paramHWSafety),
 		Home:       newParameter(paramHome),
-		Random:     newParameter(paramRandom),
+		ModePos:    newParameter(paramModePos),
 		RPMs:       newParameter(paramRPMs),
 		WriteAngle: newParameter(paramWritePos),
 		ReadAngle:  newParameter(paramReadPos),
@@ -129,7 +129,7 @@ type motorInfos struct {
 	Motor  string            `json:"motor"` // x,z
 	Online bool              `json:"online"`
 	Status string            `json:"status"` // N/A,manual,hw-safety,ready
-	Mode   string            `json:"mode"`   // N/A,ready,home,random
+	Mode   string            `json:"mode"`   // N/A,ready,home,position
 	RPMs   int               `json:"rpms"`
 	Angle  int               `json:"angle"`
 	Temps  [4]float64        `json:"temps"`

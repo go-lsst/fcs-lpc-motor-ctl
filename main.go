@@ -30,7 +30,7 @@ const (
 	paramManualOverride = "0.08.005" // 0:sw, 1:manual-override
 	paramCmdReady       = "0.08.015"
 	paramHome           = "2.02.017"
-	paramRandom         = "2.02.011"
+	paramModePos        = "2.02.011"
 	paramRPMs           = "0.20.022"
 	paramWritePos       = "3.70.000"
 	paramReadPos        = "0.18.002"
@@ -359,8 +359,8 @@ func (srv *server) publishData() {
 			switch {
 			case codec.Uint32(motor.params.Home.Data[:]) == 1:
 				mon.mode = motorModeHome
-			case codec.Uint32(motor.params.Random.Data[:]) == 1:
-				mon.mode = motorModeRandom
+			case codec.Uint32(motor.params.ModePos.Data[:]) == 1:
+				mon.mode = motorModePos
 			}
 		}
 		motor.histos.rows = append(motor.histos.rows, mon)
@@ -502,7 +502,7 @@ cmdLoop:
 			dbgPrintf("cmd-req-find-home\n")
 			params = append([]m702.Parameter{},
 				newParameter(paramCmdReady),
-				newParameter(paramRandom),
+				newParameter(paramModePos),
 				newParameter(paramHome),
 				newParameter(paramCmdReady),
 			)
@@ -512,11 +512,11 @@ cmdLoop:
 			codec.PutUint32(params[2].Data[:], 1)
 			codec.PutUint32(params[3].Data[:], 1)
 
-		case cmdReqRandom:
-			dbgPrintf("cmd-req-random\n")
+		case cmdReqPos:
+			dbgPrintf("cmd-req-pos\n")
 			params = append([]m702.Parameter{},
 				newParameter(paramCmdReady),
-				newParameter(paramRandom),
+				newParameter(paramModePos),
 				newParameter(paramHome),
 				newParameter(paramCmdReady),
 			)
@@ -634,7 +634,7 @@ type cmdReply struct {
 // list of all possible and known command-request names
 const (
 	cmdReqFindHome   = "find-home"
-	cmdReqRandom     = "random"
+	cmdReqPos        = "pos"
 	cmdReqReady      = "ready"
 	cmdReqRPM        = "rpm"
 	cmdReqAnglePos   = "angle-position"

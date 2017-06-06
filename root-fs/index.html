@@ -166,8 +166,8 @@ window.onload = function() {
 			"fcs-ctl-"+motor+"-rpm",
 			"fcs-ctl-"+motor+"-angle-position",
 		];
-		var disabled = data.mode != "random" || !ready;
-		var raised = data.mode == "random" && ready;
+		var disabled = data.mode != "pos" || !ready;
+		var raised = data.mode == "pos" && ready;
 
 		for (var i = 0; i < ids.length; i++) {
 			var id = ids[i];
