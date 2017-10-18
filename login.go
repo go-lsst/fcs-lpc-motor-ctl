@@ -166,6 +166,10 @@ func newAuthRegistry() *authRegistry {
 		log.Fatalf("error decoding JSON db: %v\n", err)
 	}
 
+	if *mockFlag {
+		db["faux-fcs"] = "faux-fcs"
+	}
+
 	return &authRegistry{
 		store: make(map[string]webClient),
 		db:    db,

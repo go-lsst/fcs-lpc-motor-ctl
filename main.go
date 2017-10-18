@@ -595,6 +595,11 @@ func (c *client) setACL(user string) {
 	case "visitor":
 		c.acl = 0
 	}
+	if *mockFlag {
+		if user == "faux-fcs" {
+			c.acl = 1
+		}
+	}
 }
 
 type cmdRequest struct {
