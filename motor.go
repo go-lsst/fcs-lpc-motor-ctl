@@ -6,14 +6,19 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"sync"
+	"time"
 
+	"github.com/go-lsst/fcs-lpc-motor-ctl/bench"
+	"github.com/go-lsst/fcs-lpc-motor-ctl/mock"
 	"github.com/go-lsst/ncs/drivers/m702"
 )
 
 type motor struct {
 	name   string
 	addr   string
+	mock   bool
 	params motorParams
 	histos motorHistos
 	online bool // whether motors are online/connected
@@ -21,9 +26,16 @@ type motor struct {
 	mu sync.RWMutex // see motor.updateAnglePos
 }
 
+func (m *motor) Motor() bench.Motor {
+	if m.mock {
+		return mock.New(m.addr)
+	}
+	return bench.NewMotorFrom(m702.New(m.addr))
+}
+
 func (m *motor) poll() []error {
 	var errs []error
-	mm := m702.New(m.addr)
+	mm := m.Motor()
 	for _, p := range []*m702.Parameter{
 		&m.params.Manual,
 		&m.params.HWSafety,
@@ -42,6 +54,21 @@ func (m *motor) poll() []error {
 		}
 	}
 	return errs
+}
+
+func (m *motor) isOnline(timeout time.Duration) (bool, error) {
+	if m.mock {
+		return true, nil
+	}
+	online := false
+	c, err := net.DialTimeout("tcp", m.addr, timeout)
+	if c != nil {
+		defer c.Close()
+	}
+	if err == nil && c != nil {
+		online = true
+	}
+	return online, err
 }
 
 func (m *motor) isHWLocked() bool {
@@ -69,7 +96,7 @@ func (m *motor) updateAnglePos() error {
 	m.mu.Lock()
 	pos := codec.Uint32(m.params.ReadAngle.Data[:])
 	mm := m702.New(m.addr)
-	param := newParameter(paramWritePos)
+	param := newParameter(bench.ParamWritePos)
 	codec.PutUint32(param.Data[:], pos)
 	err := mm.WriteParam(param)
 	m.mu.Unlock()
@@ -87,6 +114,12 @@ func newMotor(name, addr string) motor {
 	}
 }
 
+func newMotorMock(name, addr string) motor {
+	m := newMotor(name, addr)
+	m.mock = true
+	return m
+}
+
 type motorParams struct {
 	Manual     m702.Parameter
 	CmdReady   m702.Parameter
@@ -101,19 +134,19 @@ type motorParams struct {
 
 func newMotorParams() motorParams {
 	return motorParams{
-		Manual:     newParameter(paramManualOverride),
-		CmdReady:   newParameter(paramCmdReady),
-		HWSafety:   newParameter(paramHWSafety),
-		Home:       newParameter(paramHome),
-		ModePos:    newParameter(paramModePos),
-		RPMs:       newParameter(paramRPMs),
-		WriteAngle: newParameter(paramWritePos),
-		ReadAngle:  newParameter(paramReadPos),
+		Manual:     newParameter(bench.ParamManualOverride),
+		CmdReady:   newParameter(bench.ParamCmdReady),
+		HWSafety:   newParameter(bench.ParamHWSafety),
+		Home:       newParameter(bench.ParamHome),
+		ModePos:    newParameter(bench.ParamModePos),
+		RPMs:       newParameter(bench.ParamRPMs),
+		WriteAngle: newParameter(bench.ParamWritePos),
+		ReadAngle:  newParameter(bench.ParamReadPos),
 		Temps: [4]m702.Parameter{
-			newParameter(paramTemp0),
-			newParameter(paramTemp1),
-			newParameter(paramTemp2),
-			newParameter(paramTemp3),
+			newParameter(bench.ParamTemp0),
+			newParameter(bench.ParamTemp1),
+			newParameter(bench.ParamTemp2),
+			newParameter(bench.ParamTemp3),
 		},
 	}
 }

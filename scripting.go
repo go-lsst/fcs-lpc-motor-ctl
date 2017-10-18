@@ -11,14 +11,16 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-lsst/fcs-lpc-motor-ctl/bench"
 	"github.com/go-lsst/ncs/drivers/m702"
 )
 
 type scriptCmd func(args []string) error
 
 type Script struct {
+	srv   *server
 	cmds  map[string]scriptCmd
-	motor m702.Motor
+	motor bench.Motor
 }
 
 func (sc *Script) cmdGet(args []string) error {
@@ -26,7 +28,6 @@ func (sc *Script) cmdGet(args []string) error {
 	if err != nil {
 		return err
 	}
-
 	return sc.motor.ReadParam(&param)
 }
 
@@ -80,7 +81,7 @@ func (sc *Script) cmdMotor(args []string) error {
 	return nil
 }
 
-func (sc *Script) run(motor m702.Motor, r io.Reader) error {
+func (sc *Script) run(motor bench.Motor, r io.Reader) error {
 	var (
 		err      error
 		oldMotor = sc.motor
@@ -129,9 +130,10 @@ func (sc *Script) parseParam(arg string) (m702.Parameter, error) {
 	return m702.NewParameter(arg)
 }
 
-func newScripter(motor m702.Motor) Script {
+func newScripter(srv *server, motor bench.Motor) Script {
 	var script Script
 	script = Script{
+		srv: srv,
 		cmds: map[string]scriptCmd{
 			"get":   script.cmdGet,
 			"set":   script.cmdSet,

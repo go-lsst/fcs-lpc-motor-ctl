@@ -20,27 +20,12 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/go-lsst/fcs-lpc-motor-ctl/bench"
 	"github.com/go-lsst/ncs/drivers/m702"
 	"golang.org/x/net/websocket"
 )
 
 //go:generate go-bindata-assetfs -prefix=root-fs/ ./root-fs
-
-const (
-	paramManualOverride = "0.08.005" // 0:sw, 1:manual-override
-	paramCmdReady       = "0.08.015"
-	paramHome           = "2.02.017"
-	paramModePos        = "2.02.011"
-	paramRPMs           = "0.20.022"
-	paramWritePos       = "3.70.000"
-	paramReadPos        = "0.18.002"
-	paramTemp0          = "0.07.004"
-	paramTemp1          = "0.07.005"
-	paramTemp2          = "0.07.006"
-	paramTemp3          = "0.07.034"
-
-	paramHWSafety = "0.08.040" // 0:OK, 1:HW-Safety ON
-)
 
 var (
 	codec       = binary.BigEndian
@@ -48,6 +33,7 @@ var (
 	localFlag   = flag.Bool("local", false, "enable/disable local IPs")
 	verboseFlag = flag.Bool("verbose", false, "enable/disable verbose mode")
 	webcamFlag  = flag.Bool("webcam", true, "enable/disable webcam")
+	mockFlag    = flag.Bool("mock", false, "enable/disable mock motors")
 
 	errMotorOffline     = fcsError{1, "fcs: motor OFFLINE"}
 	errMotorHWLock      = fcsError{2, "fcs: motor HW-safety enabled"}
@@ -76,7 +62,7 @@ func newParameter(name string) m702.Parameter {
 func main() {
 	flag.Parse()
 
-	srv := newServer()
+	srv := newServer(*addrFlag)
 	mux := http.NewServeMux()
 	mux.Handle("/", srv)
 	mux.HandleFunc("/login", srv.handleLogin)
@@ -119,6 +105,7 @@ type server struct {
 		x motor
 		z motor
 	}
+	bench bench.Bench
 
 	dataReg  registry // clients interested in motor-statuses
 	cmdsReg  registry // clients interested in sending/receiving motor commands
@@ -127,8 +114,7 @@ type server struct {
 	datac chan motorInfos
 }
 
-func newServer() *server {
-	addr := *addrFlag
+func newServer(addr string) *server {
 	if addr == "" {
 		addr = getHostIP() + ":5555"
 	}
@@ -142,18 +128,22 @@ func newServer() *server {
 		datac:   make(chan motorInfos),
 	}
 
-	if !*localFlag {
+	switch {
+	case *mockFlag:
+		srv.motor.x = newMotorMock("x", "127.0.0.1:5020")
+		srv.motor.z = newMotorMock("z", "127.0.0.1:5021")
+	case *localFlag:
+		srv.motor.x = newMotor("x", "192.168.0.21:502") // master-x
+		srv.motor.z = newMotor("z", "192.168.0.23:502") // master-z
+		if *webcamFlag {
+			srv.webcam = "192.168.0.30:80"
+		}
+	default:
 		ip := "134.158.155.16"
 		srv.motor.x = newMotor("x", ip+":5021") // master-x
 		srv.motor.z = newMotor("z", ip+":5023") // master-z
 		if *webcamFlag {
 			srv.webcam = ip + ":80"
-		}
-	} else {
-		srv.motor.x = newMotor("x", "192.168.0.21:502") // master-x
-		srv.motor.z = newMotor("z", "192.168.0.23:502") // master-z
-		if *webcamFlag {
-			srv.webcam = "192.168.0.30:80"
 		}
 	}
 
@@ -287,15 +277,10 @@ func (srv *server) publishData() {
 		}
 
 		{
-			c, err := net.DialTimeout("tcp", motor.addr, 5*time.Second)
-			if err != nil || c == nil {
-				motor.online = false
+			var err error
+			motor.online, err = motor.isOnline(5 * time.Second)
+			if err != nil {
 				log.Printf("-- motor-%v: offline (err=%v)\n", motor.name, err)
-			} else {
-				motor.online = true
-			}
-			if c != nil {
-				c.Close()
 			}
 			if !motor.online {
 				motor.histos.rows = append(motor.histos.rows, monData{id: time.Now()})
@@ -465,19 +450,12 @@ cmdLoop:
 			srv.sendReply(c.ws, cmdReply{Err: errInvalidMotorName.Error(), Req: req})
 			continue
 		}
-		motor := m702.New(srvMotor.addr)
-		script := newScripter(motor)
-
 		{
-			conn, err := net.DialTimeout("tcp", srvMotor.addr, 1*time.Second)
-			if err != nil || conn == nil {
+			online, err := srvMotor.isOnline(1 * time.Second)
+			if err != nil || !online {
 				srv.sendReply(c.ws, cmdReply{Err: errMotorOffline.Error(), Req: req})
-				if conn != nil {
-					conn.Close()
-				}
 				continue
 			}
-			conn.Close()
 		}
 
 		if srvMotor.isHWLocked() {
@@ -490,21 +468,24 @@ cmdLoop:
 			continue
 		}
 
+		var motor bench.Motor = srvMotor.Motor()
+		script := newScripter(srv, motor)
+
 	retry:
 		params := make([]m702.Parameter, 1)
 		switch req.Name {
 		case cmdReqReady:
 			dbgPrintf("cmd-req-ready: %v\n", uint32(req.Value))
-			params[0] = newParameter(paramCmdReady)
+			params[0] = newParameter(bench.ParamCmdReady)
 			codec.PutUint32(params[0].Data[:], uint32(req.Value))
 
 		case cmdReqFindHome:
 			dbgPrintf("cmd-req-find-home\n")
 			params = append([]m702.Parameter{},
-				newParameter(paramCmdReady),
-				newParameter(paramModePos),
-				newParameter(paramHome),
-				newParameter(paramCmdReady),
+				newParameter(bench.ParamCmdReady),
+				newParameter(bench.ParamModePos),
+				newParameter(bench.ParamHome),
+				newParameter(bench.ParamCmdReady),
 			)
 
 			codec.PutUint32(params[0].Data[:], 0)
@@ -515,10 +496,10 @@ cmdLoop:
 		case cmdReqPos:
 			dbgPrintf("cmd-req-pos\n")
 			params = append([]m702.Parameter{},
-				newParameter(paramCmdReady),
-				newParameter(paramModePos),
-				newParameter(paramHome),
-				newParameter(paramCmdReady),
+				newParameter(bench.ParamCmdReady),
+				newParameter(bench.ParamModePos),
+				newParameter(bench.ParamHome),
+				newParameter(bench.ParamCmdReady),
 			)
 
 			codec.PutUint32(params[0].Data[:], 0)
@@ -528,12 +509,12 @@ cmdLoop:
 
 		case cmdReqRPM:
 			dbgPrintf("cmd-req-rpm\n")
-			params[0] = newParameter(paramRPMs)
+			params[0] = newParameter(bench.ParamRPMs)
 			codec.PutUint32(params[0].Data[:], uint32(req.Value))
 
 		case cmdReqAnglePos:
 			dbgPrintf("cmd-req-angle-pos\n")
-			params[0] = newParameter(paramWritePos)
+			params[0] = newParameter(bench.ParamWritePos)
 			codec.PutUint32(params[0].Data[:], uint32(math.Floor(req.Value*10)))
 
 		case cmdReqUploadCmds:
