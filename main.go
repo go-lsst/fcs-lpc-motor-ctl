@@ -73,6 +73,51 @@ func main() {
 	mux.Handle("/cmds", websocket.Handler(srv.cmdsHandler))
 	mux.Handle("/data", websocket.Handler(srv.dataHandler))
 	mux.Handle("/video", websocket.Handler(srv.videoHandler))
+
+	for _, v := range []struct {
+		name string
+		h    http.HandlerFunc
+		acl  bool
+	}{
+		{
+			name: "/api/mon",
+			h:    srv.apiMonHandler,
+			acl:  false,
+		},
+		{
+			name: "/api/cmd/req-ready",
+			h:    srv.apiCmdReqReadyHandler,
+			acl:  true,
+		},
+		{
+			name: "/api/cmd/req-find-home",
+			h:    srv.apiCmdReqFindHomeHandler,
+			acl:  true,
+		},
+		{
+			name: "/api/cmd/req-pos",
+			h:    srv.apiCmdReqPosHandler,
+			acl:  true,
+		},
+		{
+			name: "/api/cmd/req-rpm",
+			h:    srv.apiCmdReqRPMHandler,
+			acl:  true,
+		},
+		{
+			name: "/api/cmd/req-angle-pos",
+			h:    srv.apiCmdReqAnglePosHandler,
+			acl:  true,
+		},
+		{
+			name: "/api/cmd/req-upload-cmds",
+			h:    srv.apiCmdReqUploadCmdsHandler,
+			acl:  true,
+		},
+	} {
+		mux.HandleFunc(v.name, srv.apiAuthenticated(v.h, v.acl))
+	}
+
 	err := http.ListenAndServe(srv.Addr, mux)
 	if err != nil {
 		log.Fatal(err)
