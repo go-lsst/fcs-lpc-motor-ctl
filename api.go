@@ -5,9 +5,16 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"time"
+
+	"github.com/go-lsst/fcs-lpc-motor-ctl/bench"
+	"github.com/go-lsst/ncs/drivers/m702"
 )
 
 var (
@@ -19,35 +26,306 @@ func (srv *server) apiMonHandler(w http.ResponseWriter, r *http.Request) {
 		srv.apiError(w, errInvalidHTTPMethod, http.StatusMethodNotAllowed)
 		return
 	}
-	fmt.Fprintf(w, "/api/mon: %#v", r)
+	var infos [2]motorInfos
+	for i, m := range srv.motors() {
+		info, err := m.infos(1 * time.Second)
+		if err != nil {
+			srv.apiError(w, err, http.StatusServiceUnavailable)
+			return
+		}
+		infos[i] = info
+	}
+	var resp = struct {
+		Err   string        `json:"error"`
+		Code  int           `json:"code"`
+		Infos [2]motorInfos `json:"infos"`
+	}{
+		Err:   "",
+		Code:  http.StatusOK,
+		Infos: infos,
+	}
+
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(resp)
+	if err != nil {
+		srv.apiError(w, fmt.Errorf("could not encode monitoring infos to JSON: %v", err), http.StatusInternalServerError)
+		return
+	}
+	_, err = io.Copy(w, &buf)
+	if err != nil {
+		srv.apiError(w, fmt.Errorf("error writing JSON response: %v", err), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (srv *server) apiCmdReqReadyHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "/api/cmd/req-ready: %#v", r)
+	if r.Method != http.MethodPost {
+		srv.apiError(w, errInvalidHTTPMethod, http.StatusMethodNotAllowed)
+		return
+	}
+	defer r.Body.Close()
+
+	var req cmdRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		srv.apiError(w, fmt.Errorf("error decoding JSON request: %v", err), http.StatusBadRequest)
+		return
+	}
+	req.tstamp = time.Now().UTC()
+	req.Type = "ctl"
+
+	m, ok := srv.apiCheck(req, w, r)
+	if !ok {
+		return
+	}
+
+	p := newParameter(bench.ParamCmdReady)
+	codec.PutUint32(p.Data[:], uint32(req.Value))
+	err = m.Motor().WriteParam(p)
+	if err != nil {
+		srv.apiError(w, fmt.Errorf("error writing parameter %v to motor-%v: %v", p, m.name, err), http.StatusInternalServerError)
+		return
+	}
+	srv.apiOK(w, http.StatusOK)
 }
 
 func (srv *server) apiCmdReqFindHomeHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "/api/cmd/req-find-home: %#v", r)
+	if r.Method != http.MethodPost {
+		srv.apiError(w, errInvalidHTTPMethod, http.StatusMethodNotAllowed)
+		return
+	}
+	defer r.Body.Close()
+
+	var req cmdRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		srv.apiError(w, fmt.Errorf("error decoding JSON request: %v", err), http.StatusBadRequest)
+		return
+	}
+	req.tstamp = time.Now().UTC()
+	req.Type = "ctl"
+
+	m, ok := srv.apiCheck(req, w, r)
+	if !ok {
+		return
+	}
+
+	params := append([]m702.Parameter{},
+		newParameter(bench.ParamCmdReady),
+		newParameter(bench.ParamModePos),
+		newParameter(bench.ParamHome),
+		newParameter(bench.ParamCmdReady),
+	)
+
+	codec.PutUint32(params[0].Data[:], 0)
+	codec.PutUint32(params[1].Data[:], 0)
+	codec.PutUint32(params[2].Data[:], 1)
+	codec.PutUint32(params[3].Data[:], 1)
+
+	for _, p := range params {
+		err = m.Motor().WriteParam(p)
+		if err != nil {
+			srv.apiError(w, fmt.Errorf("error writing parameter %v to motor-%v: %v", p, m.name, err), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	srv.apiOK(w, http.StatusOK)
 }
 
 func (srv *server) apiCmdReqPosHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "/api/cmd/req-pos: %#v", r)
+	if r.Method != http.MethodPost {
+		srv.apiError(w, errInvalidHTTPMethod, http.StatusMethodNotAllowed)
+		return
+	}
+	defer r.Body.Close()
+
+	var req cmdRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		srv.apiError(w, fmt.Errorf("error decoding JSON request: %v", err), http.StatusBadRequest)
+		return
+	}
+	req.tstamp = time.Now().UTC()
+	req.Type = "ctl"
+
+	m, ok := srv.apiCheck(req, w, r)
+	if !ok {
+		return
+	}
+
+	params := append([]m702.Parameter{},
+		newParameter(bench.ParamCmdReady),
+		newParameter(bench.ParamModePos),
+		newParameter(bench.ParamHome),
+		newParameter(bench.ParamCmdReady),
+	)
+
+	codec.PutUint32(params[0].Data[:], 0)
+	codec.PutUint32(params[1].Data[:], 1)
+	codec.PutUint32(params[2].Data[:], 0)
+	codec.PutUint32(params[3].Data[:], 1)
+
+	for _, p := range params {
+		err = m.Motor().WriteParam(p)
+		if err != nil {
+			srv.apiError(w, fmt.Errorf("error writing parameter %v to motor-%v: %v", p, m.name, err), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	srv.apiOK(w, http.StatusOK)
 }
 
 func (srv *server) apiCmdReqRPMHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "/api/cmd/req-rpm: %#v", r)
+	if r.Method != http.MethodPost {
+		srv.apiError(w, errInvalidHTTPMethod, http.StatusMethodNotAllowed)
+		return
+	}
+	defer r.Body.Close()
+
+	var req cmdRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		srv.apiError(w, fmt.Errorf("error decoding JSON request: %v", err), http.StatusBadRequest)
+		return
+	}
+	req.tstamp = time.Now().UTC()
+	req.Type = "ctl"
+
+	if req.Value > 3000 {
+		srv.apiError(w, fmt.Errorf("invalid RPM value (%v > 3000)", req.Value), http.StatusBadRequest)
+		return
+	}
+	if req.Value < 0 {
+		srv.apiError(w, fmt.Errorf("invalid RPM value (%v < 0)", req.Value), http.StatusBadRequest)
+		return
+	}
+
+	m, ok := srv.apiCheck(req, w, r)
+	if !ok {
+		return
+	}
+
+	p := newParameter(bench.ParamRPMs)
+	codec.PutUint32(p.Data[:], uint32(req.Value))
+	err = m.Motor().WriteParam(p)
+	if err != nil {
+		srv.apiError(w, fmt.Errorf("error writing parameter %v to motor-%v: %v", p, m.name, err), http.StatusInternalServerError)
+		return
+	}
+
+	srv.apiOK(w, http.StatusOK)
 }
 
 func (srv *server) apiCmdReqAnglePosHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "/api/cmd/req-angle-pos: %#v", r)
+	if r.Method != http.MethodPost {
+		srv.apiError(w, errInvalidHTTPMethod, http.StatusMethodNotAllowed)
+		return
+	}
+	defer r.Body.Close()
+
+	var req cmdRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		srv.apiError(w, fmt.Errorf("error decoding JSON request: %v", err), http.StatusBadRequest)
+		return
+	}
+	req.tstamp = time.Now().UTC()
+	req.Type = "ctl"
+	if req.Value > +90 {
+		srv.apiError(w, fmt.Errorf("invalid angle position (%v > +90.0)", req.Value), http.StatusBadRequest)
+		return
+	}
+	if req.Value < -90 {
+		srv.apiError(w, fmt.Errorf("invalid angle position (%v < -90.0)", req.Value), http.StatusBadRequest)
+		return
+	}
+	req.Value *= 10
+
+	m, ok := srv.apiCheck(req, w, r)
+	if !ok {
+		return
+	}
+
+	p := newParameter(bench.ParamWritePos)
+	codec.PutUint32(p.Data[:], uint32(req.Value))
+	err = m.Motor().WriteParam(p)
+	if err != nil {
+		srv.apiError(w, fmt.Errorf("error writing parameter %v to motor-%v: %v", p, m.name, err), http.StatusInternalServerError)
+		return
+	}
+
+	srv.apiOK(w, http.StatusOK)
 }
 
 func (srv *server) apiCmdReqUploadCmdsHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "/api/cmd/req-upload-cmds: %#v", r)
+	if r.Method != http.MethodPost {
+		srv.apiError(w, errInvalidHTTPMethod, http.StatusMethodNotAllowed)
+		return
+	}
+	defer r.Body.Close()
+
+	var req cmdRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		srv.apiError(w, fmt.Errorf("error decoding JSON request: %v", err), http.StatusBadRequest)
+		return
+	}
+	req.tstamp = time.Now().UTC()
+	req.Type = "ctl"
+
+	m, ok := srv.apiCheck(req, w, r)
+	if !ok {
+		return
+	}
+
+	script := newScripter(srv, m.Motor())
+	cmds := bytes.NewReader([]byte(req.Cmds))
+	err = script.run(m.Motor(), cmds)
+	if err != nil {
+		srv.apiError(w, fmt.Errorf("error running script: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	srv.apiOK(w, http.StatusOK)
+}
+
+func (srv *server) apiOK(w http.ResponseWriter, code int) {
+	http.Error(w, fmt.Sprintf("{error:%q, code:%v}", "", code), code)
 }
 
 func (srv *server) apiError(w http.ResponseWriter, err error, code int) {
 	http.Error(w, fmt.Sprintf("{error:%q, code:%v}", err.Error(), code), code)
+}
+
+func (srv *server) apiCheck(req cmdRequest, w http.ResponseWriter, r *http.Request) (*motor, bool) {
+	m, err := srv.getMotor(req.Motor)
+	if err != nil {
+		srv.apiError(w, err, http.StatusBadRequest)
+		return nil, false
+	}
+
+	if online, err := m.isOnline(1 * time.Second); err != nil || !online {
+		if err != nil {
+			srv.apiError(w, err, http.StatusServiceUnavailable)
+			return nil, false
+		}
+		srv.apiError(w, bench.ErrMotorOffline, http.StatusServiceUnavailable)
+		return nil, false
+	}
+
+	if m.isHWLocked() {
+		srv.apiError(w, bench.ErrMotorHWLock, http.StatusServiceUnavailable)
+		return nil, false
+	}
+
+	if m.isManual() {
+		srv.apiError(w, bench.ErrMotorManual, http.StatusServiceUnavailable)
+		return nil, false
+	}
+
+	return m, true
 }
 
 func (srv *server) apiAuthenticated(h func(w http.ResponseWriter, r *http.Request), needACL bool) http.HandlerFunc {
@@ -58,23 +336,9 @@ func (srv *server) apiAuthenticated(h func(w http.ResponseWriter, r *http.Reques
 			return
 		}
 
-		err = r.ParseForm()
-		if err != nil {
-			srv.apiError(w, fmt.Errorf("could not parse form: %v", err), http.StatusInternalServerError)
-			return
-		}
-
-		user := r.FormValue("username")
-		pass := r.FormValue("password")
-		if user == "" {
-			u, p, ok := r.BasicAuth()
-			if ok {
-				user = u
-				pass = p
-			}
-		}
-		if !srv.authenticate(user, pass) {
-			srv.apiError(w, fmt.Errorf("invalid user/password"), http.StatusForbidden)
+		user, pass, ok := r.BasicAuth()
+		if !ok || !srv.authenticate(user, pass) {
+			srv.apiError(w, errUserAuth, http.StatusForbidden)
 			return
 		}
 
@@ -82,17 +346,11 @@ func (srv *server) apiAuthenticated(h func(w http.ResponseWriter, r *http.Reques
 		cli.name = user
 		srv.session.set(cookie, cli)
 
-		r.SetBasicAuth(user, pass)
-		if !cli.auth {
-			srv.apiError(w, fmt.Errorf("authentication error"), http.StatusForbidden)
-			return
-		}
-
 		c := client{}
 		c.setACL(cli.name)
 
 		if needACL && c.acl != 1 {
-			srv.apiError(w, fmt.Errorf("authorization error"), http.StatusForbidden)
+			srv.apiError(w, errUserPerm, http.StatusForbidden)
 			return
 		}
 

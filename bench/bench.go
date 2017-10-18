@@ -4,7 +4,11 @@
 
 package bench
 
-import "github.com/go-lsst/ncs/drivers/m702"
+import (
+	"fmt"
+
+	"github.com/go-lsst/ncs/drivers/m702"
+)
 
 const (
 	ParamManualOverride = "0.08.005" // 0:sw, 1:manual-override
@@ -21,6 +25,28 @@ const (
 
 	ParamHWSafety = "0.08.040" // 0:OK, 1:HW-Safety ON
 )
+
+var (
+	ErrMotorOffline     = FcsError{1, "fcs: motor OFFLINE"}
+	ErrMotorHWLock      = FcsError{2, "fcs: motor HW-safety enabled"}
+	ErrMotorManual      = FcsError{3, "fcs: motor manual-mode enabled"}
+	ErrOpNotSupported   = FcsError{20, "fcs: operation not supported"}
+	ErrInvalidReq       = FcsError{102, "fcs: invalid request"}
+	ErrInvalidMotorName = FcsError{200, "fcs: invalid motor name"}
+)
+
+type FcsError struct {
+	Code int    `json:"code"`
+	Msg  string `json:"msg"`
+}
+
+func (e FcsError) Error() string {
+	return fmt.Sprintf("[%03d]: %s", e.Code, e.Msg)
+}
+
+func (e FcsError) String() string {
+	return e.Error()
+}
 
 type Bench struct {
 	Motor struct {

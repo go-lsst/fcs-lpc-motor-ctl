@@ -9,7 +9,6 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"flag"
-	"fmt"
 	"io"
 	"log"
 	"math"
@@ -35,14 +34,8 @@ var (
 	webcamFlag  = flag.Bool("webcam", true, "enable/disable webcam")
 	mockFlag    = flag.Bool("mock", false, "enable/disable mock motors")
 
-	errMotorOffline     = fcsError{1, "fcs: motor OFFLINE"}
-	errMotorHWLock      = fcsError{2, "fcs: motor HW-safety enabled"}
-	errMotorManual      = fcsError{3, "fcs: motor manual-mode enabled"}
-	errOpNotSupported   = fcsError{20, "fcs: operation not supported"}
-	errUserAuth         = fcsError{100, "fcs: user not authenticated"}
-	errUserPerm         = fcsError{101, "fcs: insufficient user permissions"}
-	errInvalidReq       = fcsError{102, "fcs: invalid request"}
-	errInvalidMotorName = fcsError{200, "fcs: invalid motor name"}
+	errUserAuth = bench.FcsError{100, "fcs: user not authenticated"}
+	errUserPerm = bench.FcsError{101, "fcs: insufficient user permissions"}
 )
 
 func dbgPrintf(format string, args ...interface{}) {
@@ -321,6 +314,8 @@ func (srv *server) publishData() {
 			}
 		}
 
+		// FIXME(sbinet): use motor.infos() instead.
+
 		{
 			var err error
 			motor.online, err = motor.isOnline(5 * time.Second)
@@ -489,27 +484,27 @@ cmdLoop:
 		case "z":
 			srvMotor = &c.srv.motor.z
 		case "":
-			srv.sendReply(c.ws, cmdReply{Err: errInvalidMotorName.Error(), Req: req})
+			srv.sendReply(c.ws, cmdReply{Err: bench.ErrInvalidMotorName.Error(), Req: req})
 			continue
 		default:
-			srv.sendReply(c.ws, cmdReply{Err: errInvalidMotorName.Error(), Req: req})
+			srv.sendReply(c.ws, cmdReply{Err: bench.ErrInvalidMotorName.Error(), Req: req})
 			continue
 		}
 		{
 			online, err := srvMotor.isOnline(1 * time.Second)
 			if err != nil || !online {
-				srv.sendReply(c.ws, cmdReply{Err: errMotorOffline.Error(), Req: req})
+				srv.sendReply(c.ws, cmdReply{Err: bench.ErrMotorOffline.Error(), Req: req})
 				continue
 			}
 		}
 
 		if srvMotor.isHWLocked() {
-			srv.sendReply(c.ws, cmdReply{Err: errMotorHWLock.Error(), Req: req})
+			srv.sendReply(c.ws, cmdReply{Err: bench.ErrMotorHWLock.Error(), Req: req})
 			continue
 		}
 
 		if srvMotor.isManual() {
-			srv.sendReply(c.ws, cmdReply{Err: errMotorManual.Error(), Req: req})
+			srv.sendReply(c.ws, cmdReply{Err: bench.ErrMotorManual.Error(), Req: req})
 			continue
 		}
 
@@ -574,7 +569,7 @@ cmdLoop:
 			continue
 
 		default:
-			srv.sendReply(c.ws, cmdReply{Err: errInvalidReq.Error(), Req: req})
+			srv.sendReply(c.ws, cmdReply{Err: bench.ErrInvalidReq.Error(), Req: req})
 			continue
 		}
 
@@ -693,17 +688,4 @@ func getHostIP() string {
 
 	log.Fatalf("could not infer host IP")
 	return ""
-}
-
-type fcsError struct {
-	Code int    `json:"code"`
-	Msg  string `json:"msg"`
-}
-
-func (e fcsError) Error() string {
-	return fmt.Sprintf("[%03d]: %s", e.Code, e.Msg)
-}
-
-func (e fcsError) String() string {
-	return e.Error()
 }

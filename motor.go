@@ -6,7 +6,9 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net"
+	"strings"
 	"sync"
 	"time"
 
@@ -14,6 +16,19 @@ import (
 	"github.com/go-lsst/fcs-lpc-motor-ctl/mock"
 	"github.com/go-lsst/ncs/drivers/m702"
 )
+
+func (srv *server) getMotor(name string) (*motor, error) {
+	var m *motor
+	switch strings.ToLower(name) {
+	case "x":
+		m = &srv.motor.x
+	case "z":
+		m = &srv.motor.z
+	default:
+		return nil, bench.ErrInvalidMotorName
+	}
+	return m, nil
+}
 
 type motor struct {
 	name   string
@@ -101,6 +116,86 @@ func (m *motor) updateAnglePos() error {
 	err := mm.WriteParam(param)
 	m.mu.Unlock()
 	return err
+}
+
+func (m *motor) infos(timeout time.Duration) (infos motorInfos, err error) {
+	online, err := m.isOnline(timeout)
+	if err != nil {
+		return infos, err
+	}
+	if !online {
+		infos = motorInfos{
+			Motor:  m.name,
+			Online: online,
+			Mode:   "N/A",
+		}
+		return infos, err
+	}
+
+	errs := m.poll()
+	if len(errs) > 0 {
+		for _, err := range errs {
+			log.Printf("%v", err)
+		}
+		return infos, errs[0]
+	}
+
+	if m.isManual() {
+		// make sure we won't override what manual-mode did
+		// when we go back to sw-mode/ready-mode
+		err = m.updateAnglePos()
+		if err != nil {
+			log.Printf("-- motor-%v: standby: %v\n", m.name, err)
+		}
+		return infos, err
+	}
+
+	mon := monData{
+		id:    time.Now(),
+		rpms:  m.rpms(),
+		angle: m.angle(),
+		temps: [4]float64{
+			float64(codec.Uint32(m.params.Temps[0].Data[:])),
+			float64(codec.Uint32(m.params.Temps[1].Data[:])),
+			float64(codec.Uint32(m.params.Temps[2].Data[:])),
+			float64(codec.Uint32(m.params.Temps[3].Data[:])),
+		},
+	}
+
+	status := "N/A"
+
+	manual := m.isManual()
+	ready := !manual
+	hwsafetyON := m.isHWLocked()
+
+	switch {
+	case hwsafetyON:
+		status = "h/w safety"
+	case manual:
+		status = "manual"
+	case ready:
+		status = "ready"
+	}
+
+	if online {
+		switch {
+		case codec.Uint32(m.params.Home.Data[:]) == 1:
+			mon.mode = motorModeHome
+		case codec.Uint32(m.params.ModePos.Data[:]) == 1:
+			mon.mode = motorModePos
+		}
+	}
+	infos = motorInfos{
+		Motor:  m.name,
+		Online: online,
+		Status: status,
+		Mode:   mon.Mode(),
+		RPMs:   int(mon.rpms),
+		Angle:  int(mon.angle),
+		Temps:  mon.temps,
+	}
+
+	return infos, err
 }
 
 func newMotor(name, addr string) motor {
