@@ -73,7 +73,15 @@ func (sc *Script) cmdMotor(args []string) error {
 		return nil // FIXME(sbinet)
 	case 1:
 		// set
-		sc.motor = m702.New(args[0])
+		motors := sc.srv.motors()
+		switch strings.ToLower(args[0]) {
+		case "x":
+			sc.motor = motors[0].Motor()
+		case "z":
+			sc.motor = motors[1].Motor()
+		default:
+			return fcsError{200, fmt.Sprintf("invalid motor name (got=%v, want=x|z)", args[0])}
+		}
 		return nil
 	default:
 		return fcsError{200, fmt.Sprintf("invalid number of arguments (got=%d, want=1|2)", len(args))}

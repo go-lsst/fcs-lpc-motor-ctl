@@ -51,6 +51,7 @@ fcs.uploadScriptFile = function(file) {
 	reader.onloadend = function() {
 		var cmd = {
 			type:  "ctl",
+			motor: "x",
 			token: fcs.token,
 			name:  "upload-commands",
 			cmds:  reader.result,
@@ -65,6 +66,7 @@ fcs.uploadCommands = function(event) {
 
 	var cmd = {
 		type: "ctl",
+		motor: "x",
 		token: fcs.token,
 		name: "upload-commands",
 		cmds: form.textarea.value,
