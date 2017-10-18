@@ -280,15 +280,37 @@ func (srv *server) apiCmdReqUploadCmdsHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	buf := new(bytes.Buffer)
 	script := newScripter(srv, m.Motor())
 	cmds := bytes.NewReader([]byte(req.Cmds))
-	err = script.run(m.Motor(), cmds)
+	err = script.run(m.Motor(), cmds, buf)
 	if err != nil {
 		srv.apiError(w, fmt.Errorf("error running script: %v", err), http.StatusInternalServerError)
 		return
 	}
 
-	srv.apiOK(w, http.StatusOK)
+	var reply = struct {
+		Err    string `json:"error"`
+		Code   int    `json:"code"`
+		Script string `json:"script"`
+	}{
+		Err:    "",
+		Code:   http.StatusOK,
+		Script: string(buf.Bytes()),
+	}
+
+	var o = new(bytes.Buffer)
+	err = json.NewEncoder(o).Encode(reply)
+	if err != nil {
+		srv.apiError(w, fmt.Errorf("error encoding JSON reply: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	_, err = io.Copy(w, o)
+	if err != nil {
+		srv.apiError(w, fmt.Errorf("error sending JSON reply: %v", err), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (srv *server) apiOK(w http.ResponseWriter, code int) {

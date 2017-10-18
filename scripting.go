@@ -15,7 +15,7 @@ import (
 	"github.com/go-lsst/ncs/drivers/m702"
 )
 
-type scriptCmd func(args []string) error
+type scriptCmd func(args []string, w io.Writer) (m702.Parameter, error)
 
 type Script struct {
 	srv   *server
@@ -23,18 +23,44 @@ type Script struct {
 	motor bench.Motor
 }
 
-func (sc *Script) cmdGet(args []string) error {
-	param, err := sc.parseParam(args[0])
-	if err != nil {
-		return err
-	}
-	return sc.motor.ReadParam(&param)
+func (sc *Script) displayParam(w io.Writer, p m702.Parameter) {
+	fmt.Fprintf(
+		w,
+		"Pr-%v: %s (%v)\n",
+		p,
+		sc.displayBytes(p.Data[:]),
+		codec.Uint32(p.Data[:]),
+	)
 }
 
-func (sc *Script) cmdSet(args []string) error {
+func (sc *Script) displayBytes(o []byte) string {
+	hex := make([]string, len(o))
+	dec := make([]string, len(o))
+	for i, v := range o {
+		hex[i] = fmt.Sprintf("0x%02x", v)
+		dec[i] = fmt.Sprintf("%3d", v)
+	}
+	return fmt.Sprintf("hex=%s dec=%s", hex, dec)
+}
+
+func (sc *Script) cmdGet(args []string, w io.Writer) (m702.Parameter, error) {
 	param, err := sc.parseParam(args[0])
 	if err != nil {
-		return err
+		return param, err
+	}
+	err = sc.motor.ReadParam(&param)
+	if err == nil {
+		fmt.Fprintf(w, "<<< ")
+		sc.displayParam(w, param)
+	}
+
+	return param, err
+}
+
+func (sc *Script) cmdSet(args []string, w io.Writer) (m702.Parameter, error) {
+	param, err := sc.parseParam(args[0])
+	if err != nil {
+		return param, err
 	}
 	vtype := "u32"
 	if len(args) > 1 && len(args[1]) > 0 && string(args[1][0]) == "-" {
@@ -48,29 +74,36 @@ func (sc *Script) cmdSet(args []string) error {
 	case "u32", "uint32":
 		vv, err := strconv.ParseUint(args[1], 10, 32)
 		if err != nil {
-			return err
+			return param, err
 		}
 		codec.PutUint32(param.Data[:], uint32(vv))
 
 	case "i32", "int32":
 		vv, err := strconv.ParseInt(args[1], 10, 32)
 		if err != nil {
-			return err
+			return param, err
 		}
 		codec.PutUint32(param.Data[:], uint32(vv))
 
 	default:
-		return fcsError{200, fmt.Sprintf("invalid value-type (%v)", vtype)}
+		return param, bench.FcsError{200, fmt.Sprintf("invalid value-type (%v)", vtype)}
 	}
 
-	return sc.motor.WriteParam(param)
+	err = sc.motor.WriteParam(param)
+	if err == nil {
+		fmt.Fprintf(w, "<<< ")
+		sc.displayParam(w, param)
+	}
+
+	return param, err
 }
 
-func (sc *Script) cmdMotor(args []string) error {
+func (sc *Script) cmdMotor(args []string, w io.Writer) (m702.Parameter, error) {
+	var p m702.Parameter
 	switch len(args) {
 	case 0:
 		// get
-		return nil // FIXME(sbinet)
+		return p, bench.FcsError{200, fmt.Sprintf("invalid number of arguments (got=%d, want=1|2)", len(args))}
 	case 1:
 		// set
 		motors := sc.srv.motors()
@@ -80,16 +113,15 @@ func (sc *Script) cmdMotor(args []string) error {
 		case "z":
 			sc.motor = motors[1].Motor()
 		default:
-			return fcsError{200, fmt.Sprintf("invalid motor name (got=%v, want=x|z)", args[0])}
+			return p, bench.FcsError{200, fmt.Sprintf("invalid motor name (got=%v, want=x|z)", args[0])}
 		}
-		return nil
+		return p, nil
 	default:
-		return fcsError{200, fmt.Sprintf("invalid number of arguments (got=%d, want=1|2)", len(args))}
+		return p, bench.FcsError{200, fmt.Sprintf("invalid number of arguments (got=%d, want=1|2)", len(args))}
 	}
-	return nil
 }
 
-func (sc *Script) run(motor bench.Motor, r io.Reader) error {
+func (sc *Script) run(motor bench.Motor, r io.Reader, w io.Writer) error {
 	var (
 		err      error
 		oldMotor = sc.motor
@@ -106,7 +138,7 @@ func (sc *Script) run(motor bench.Motor, r io.Reader) error {
 			continue
 		}
 		toks := strings.Split(txt, " ")
-		err = sc.dispatch(toks)
+		_, err = sc.dispatch(toks, w)
 		if err != nil {
 			if err == io.EOF {
 				err = nil
@@ -122,18 +154,20 @@ func (sc *Script) run(motor bench.Motor, r io.Reader) error {
 	return err
 }
 
-func (sc *Script) dispatch(toks []string) error {
+func (sc *Script) dispatch(toks []string, w io.Writer) (m702.Parameter, error) {
 	fct, ok := sc.cmds[toks[0]]
 	if !ok {
-		return fcsError{200, fmt.Sprintf("invalid command verb [%s]", toks[0])}
+		var p m702.Parameter
+		return p, bench.FcsError{200, fmt.Sprintf("invalid command verb [%s]", toks[0])}
 	}
-	return fct(toks[1:])
+	fmt.Fprintf(w, ">>> %s\n", strings.Join(toks, " "))
+	return fct(toks[1:], w)
 }
 
 func (sc *Script) parseParam(arg string) (m702.Parameter, error) {
 	if !strings.Contains(arg, ".") {
 		var p m702.Parameter
-		return p, fcsError{200, fmt.Sprintf("invalid parameter (%s)", arg)}
+		return p, bench.FcsError{200, fmt.Sprintf("invalid parameter (%s)", arg)}
 	}
 	return m702.NewParameter(arg)
 }

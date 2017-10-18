@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"flag"
 	"io"
+	"io/ioutil"
 	"log"
 	"math"
 	"net"
@@ -560,7 +561,7 @@ cmdLoop:
 		case cmdReqUploadCmds:
 			dbgPrintf("cmd-req-upload-cmds\n")
 			r := bytes.NewReader([]byte(req.Cmds))
-			err := script.run(motor, r)
+			err := script.run(motor, r, ioutil.Discard) // FIXME(sbinet): redirect to expert-textarea
 			reply := cmdReply{Req: req}
 			if err != nil {
 				reply.Err = err.Error()
