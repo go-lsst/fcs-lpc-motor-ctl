@@ -29,4 +29,7 @@ $> curl -u faux-fcs:faux-fcs -X POST clrbinetsrv.in2p3.fr:5555/api/cmd/req-pos -
 $> curl -u faux-fcs:faux-fcs clrbinetsrv.in2p3.fr:5555/api/mon
 {"error":"","code":200,"infos":[{"motor":"x","online":true,"status":"ready","mode":"pos","rpms":1300,"angle":45,"temps":[37,41,46,50],"histos":null,"webcam":""},{"motor":"z","online":true,"status":"ready","mode":"pos","rpms":1300,"angle":0,"temps":[36,40,47,51],"histos":null,"webcam":""}]}
 
+$> curl -u faux-fcs:faux-fcs -X POST clrbinetsrv.in2p3.fr:5555/api/cmd/req-upload-cmds --data '{"motor":"z", "cmds":"motor z\nget 0.18.002\nmotor x\nget 0.18.002"}'
+{"error":"","code":200,"script":"\u003e\u003e\u003e motor z\n\u003e\u003e\u003e get 0.18.002\n\u003c\u003c\u003c Pr-00.18.002: hex=[0x00 0x00 0x00 0x00] dec=[  0   0   0   0] (0)\n\u003e\u003e\u003e motor x\n\u003e\u003e\u003e get 0.18.002\n\u003c\u003c\u003c Pr-00.18.002: hex=[0x00 0x00 0x01 0xc2] dec=[  0   0   1 194] (450)\n"}
+
 ```
