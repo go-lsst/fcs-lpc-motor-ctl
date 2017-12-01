@@ -36,7 +36,7 @@ func (srv *server) apiMonHandler(w http.ResponseWriter, r *http.Request) {
 		infos[i] = info
 	}
 	var resp = struct {
-		Err   string        `json:"error"`
+		Err   string        `json:"error,omitempty"`
 		Code  int           `json:"code"`
 		Infos [2]motorInfos `json:"infos"`
 	}{
