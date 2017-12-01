@@ -313,6 +313,73 @@ func (srv *server) apiCmdReqUploadCmdsHandler(w http.ResponseWriter, r *http.Req
 	}
 }
 
+func (srv *server) apiCmdReqUploadScriptHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		srv.apiError(w, errInvalidHTTPMethod, http.StatusMethodNotAllowed)
+		return
+	}
+	defer r.Body.Close()
+
+	r.ParseMultipartForm(500 << 20)
+	f, handler, err := r.FormFile("upload-file")
+	if err != nil {
+		srv.apiError(w, fmt.Errorf("error parsing form-file %q: %v", handler.Filename, err), http.StatusInternalServerError)
+		return
+	}
+	defer f.Close()
+
+	cmd := new(bytes.Buffer)
+	_, err = io.Copy(cmd, f)
+	if err != nil {
+		srv.apiError(w, fmt.Errorf("error reading form-file %q: %v", handler.Filename, err), http.StatusInternalServerError)
+		return
+	}
+
+	req := cmdRequest{
+		tstamp: time.Now().UTC(),
+		Motor:  "x",
+		Cmds:   string(cmd.Bytes()),
+		Type:   "ctl",
+	}
+
+	m, ok := srv.apiCheck(req, w, r)
+	if !ok {
+		return
+	}
+
+	buf := new(bytes.Buffer)
+	script := newScripter(srv, m.Motor())
+	cmds := bytes.NewReader([]byte(req.Cmds))
+	err = script.run(m.Motor(), cmds, buf)
+	if err != nil {
+		srv.apiError(w, fmt.Errorf("error running script: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	var reply = struct {
+		Err    string `json:"error,omitempty"`
+		Code   int    `json:"code"`
+		Script string `json:"script"`
+	}{
+		Err:    "",
+		Code:   http.StatusOK,
+		Script: string(buf.Bytes()),
+	}
+
+	var o = new(bytes.Buffer)
+	err = json.NewEncoder(o).Encode(reply)
+	if err != nil {
+		srv.apiError(w, fmt.Errorf("error encoding JSON reply: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	_, err = io.Copy(w, o)
+	if err != nil {
+		srv.apiError(w, fmt.Errorf("error sending JSON reply: %v", err), http.StatusInternalServerError)
+		return
+	}
+}
+
 func (srv *server) apiOK(w http.ResponseWriter, code int) {
 	http.Error(w, fmt.Sprintf(`{"code":%v}`, code), code)
 }

@@ -108,6 +108,11 @@ func main() {
 			h:    srv.apiCmdReqUploadCmdsHandler,
 			acl:  true,
 		},
+		{
+			name: "/api/cmd/req-upload-script",
+			h:    srv.apiCmdReqUploadScriptHandler,
+			acl:  true,
+		},
 	} {
 		mux.HandleFunc(v.name, srv.apiAuthenticated(v.h, v.acl))
 	}
