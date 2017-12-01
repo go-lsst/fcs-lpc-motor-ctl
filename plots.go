@@ -13,6 +13,7 @@ import (
 	"math"
 	"time"
 
+	"go-hep.org/x/hep/hplot"
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
 	"gonum.org/v1/plot/vg"
@@ -34,11 +35,7 @@ func init() {
 }
 
 func newPlot(title, yaxis string, data ...plotter.XYer) (*plot.Plot, error) {
-	p, err := plot.New()
-	if err != nil {
-		return nil, err
-	}
-
+	p := hplot.New()
 	p.Title.Text = title
 	p.Y.Label.Text = yaxis
 	p.X.Tick.Marker = plot.TimeTicks{Format: "2006-01-02\n15:04:05"}
@@ -55,7 +52,7 @@ func newPlot(title, yaxis string, data ...plotter.XYer) (*plot.Plot, error) {
 	}
 	p.Add(plotter.NewGrid())
 
-	return p, nil
+	return p.Plot, nil
 }
 
 type motorMode byte
