@@ -33,6 +33,8 @@ $> curl -u faux-fcs:faux-fcs clrbinetsrv.in2p3.fr:5555/api/mon
 $> curl -u faux-fcs:faux-fcs -X POST clrbinetsrv.in2p3.fr:5555/api/cmd/req-upload-cmds --data '{"motor":"z", "cmds":"motor z\nget 0.18.002\nmotor x\nget 0.18.002"}'
 {"code":200,"script":"Pr-00.18.002: hex=[0x00 0x00 0x00 0x00] dec=[  0   0   0   0] (0)\nPr-00.18.002: hex=[0x00 0x00 0x00 0xe1] dec=[  0   0   0 225] (225)\n"}
 
+$> curl -u faux-fcs:faux-fcs -X POST clrbinetsrv.in2p3.fr:5555/api/cmd/req-upload-script -F 'upload-file=@./test.script'
+{"code":200,"script":"Pr-00.08.015: hex=[0x00 0x00 0x00 0x00] dec=[  0   0   0   0] (0)\nPr-00.08.015: hex=[0x00 0x00 0x00 0x01] dec=[  0   0   0   1] (1)\nset-x-angle-pos=20\nset-x-rpm=2000\nget-x-angle-pos=20\nget-x-rpm=2000\nset-z-angle-pos=-20\nset-z-rpm=2020\nget-z-rpm=2020\nget-z-angle-pos=-20\n"}
 
 ### high-level API
 
