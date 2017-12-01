@@ -51,7 +51,7 @@ func (sc *Script) cmdGet(args []string, w io.Writer) (m702.Parameter, error) {
 	}
 	err = sc.motor.ReadParam(&param)
 	if err == nil {
-		fmt.Fprintf(w, "<<< ")
+		// fmt.Fprintf(w, "<<< ")
 		sc.displayParam(w, param)
 	}
 
@@ -92,7 +92,7 @@ func (sc *Script) cmdSet(args []string, w io.Writer) (m702.Parameter, error) {
 
 	err = sc.motor.WriteParam(param)
 	if err == nil {
-		fmt.Fprintf(w, "<<< ")
+		// fmt.Fprintf(w, "<<< ")
 		sc.displayParam(w, param)
 	}
 
