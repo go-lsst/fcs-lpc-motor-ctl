@@ -156,6 +156,10 @@ func (sc *Script) cmdAnglePosZ(args []string, w io.Writer) (m702.Parameter, erro
 
 func (sc *Script) cmdFindHome(m *motor, args []string, w io.Writer) (m702.Parameter, error) {
 	var p m702.Parameter
+	err := sc.check(m)
+	if err != nil {
+		return p, err
+	}
 
 	params := append([]m702.Parameter{},
 		newParameter(bench.ParamCmdReady),
@@ -181,12 +185,39 @@ func (sc *Script) cmdFindHome(m *motor, args []string, w io.Writer) (m702.Parame
 
 func (sc *Script) cmdPos(m *motor, args []string, w io.Writer) (m702.Parameter, error) {
 	var p m702.Parameter
+	err := sc.check(m)
+	if err != nil {
+		return p, err
+	}
+
+	params := append([]m702.Parameter{},
+		newParameter(bench.ParamCmdReady),
+		newParameter(bench.ParamModePos),
+		newParameter(bench.ParamHome),
+		newParameter(bench.ParamCmdReady),
+	)
+
+	codec.PutUint32(params[0].Data[:], 0)
+	codec.PutUint32(params[1].Data[:], 1)
+	codec.PutUint32(params[2].Data[:], 0)
+	codec.PutUint32(params[3].Data[:], 1)
+
+	for _, p := range params {
+		err = m.Motor().WriteParam(p)
+		if err != nil {
+			return p, fmt.Errorf("error writing parameter %v to motor-%v: %v", p, m.name, err)
+		}
+	}
 
 	return p, nil
 }
 
 func (sc *Script) cmdRPM(m *motor, args []string, w io.Writer) (m702.Parameter, error) {
 	var p m702.Parameter
+	err := sc.check(m)
+	if err != nil {
+		return p, err
+	}
 
 	switch len(args) {
 	case 0:
@@ -224,7 +255,59 @@ func (sc *Script) cmdRPM(m *motor, args []string, w io.Writer) (m702.Parameter, 
 
 func (sc *Script) cmdAnglePos(m *motor, args []string, w io.Writer) (m702.Parameter, error) {
 	var p m702.Parameter
+	err := sc.check(m)
+	if err != nil {
+		return p, err
+	}
 
+	switch len(args) {
+	case 0:
+		// TODO(sbinet): only retrieve the needed infos.
+		info, err := m.infos(1 * time.Second)
+		if err != nil {
+			return p, err
+		}
+		fmt.Fprintf(w, "get-%v-angle-pos=%d\n", m.name, info.Angle)
+	case 1:
+		angle, err := strconv.Atoi(args[0])
+		if err != nil {
+			return p, err
+		}
+		switch {
+		case angle > +90:
+			return p, fmt.Errorf("invalid angle position (%v > +90.0)", angle)
+
+		case angle < -90:
+			return p, fmt.Errorf("invalid angle position (%v < -90.0)", angle)
+		}
+
+		p = newParameter(bench.ParamWritePos)
+		codec.PutUint32(p.Data[:], uint32(angle*10))
+		err = m.Motor().WriteParam(p)
+		if err != nil {
+			return p, err
+		}
+		fmt.Fprintf(w, "set-%v-angle-pos=%d\n", m.name, angle)
+		return p, nil
+
+	default:
+		return p, fmt.Errorf("fcs: invalid number of parameters (got=%d. want=0,1)", len(args))
+	}
+	return p, nil
+}
+
+func (sc *Script) cmdSleep(args []string, w io.Writer) (m702.Parameter, error) {
+	var p m702.Parameter
+	if len(args) != 1 {
+		return p, fmt.Errorf("fcs: invalid number of parameters (got=%d. want=1)", len(args))
+	}
+
+	t, err := time.ParseDuration(args[0])
+	if err != nil {
+		return p, fmt.Errorf("fcs: could not parse 'sleep %s': %v", args[0], err)
+	}
+
+	time.Sleep(t)
 	return p, nil
 }
 
@@ -267,8 +350,26 @@ func (sc *Script) dispatch(toks []string, w io.Writer) (m702.Parameter, error) {
 		var p m702.Parameter
 		return p, bench.FcsError{200, fmt.Sprintf("invalid command verb [%s]", toks[0])}
 	}
-	fmt.Fprintf(w, ">>> %s\n", strings.Join(toks, " "))
+	// fmt.Fprintf(w, ">>> %s\n", strings.Join(toks, " "))
 	return fct(toks[1:], w)
+}
+
+func (sc *Script) check(m *motor) error {
+	online, err := m.isOnline(1 * time.Second)
+	if err != nil {
+		return fmt.Errorf("fcs: error checking whether motor-%v is online: %v", m.name, err)
+	}
+	if !online {
+		return bench.ErrMotorOffline
+		// return fmt.Sprintf("fcs: motor-%v is NOT ONLINE", m.name)
+	}
+	if m.isHWLocked() {
+		return bench.ErrMotorHWLock
+	}
+	if m.isManual() {
+		return bench.ErrMotorManual
+	}
+	return nil
 }
 
 func (sc *Script) parseParam(arg string) (m702.Parameter, error) {
@@ -286,6 +387,7 @@ func newScripter(srv *server, motor bench.Motor) Script {
 		cmds: map[string]scriptCmd{
 			"get":         script.cmdGet,
 			"set":         script.cmdSet,
+			"sleep":       script.cmdSleep,
 			"motor":       script.cmdMotor,
 			"x-find-home": script.cmdFindHomeX,
 			"x-pos":       script.cmdPosX,
