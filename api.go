@@ -314,11 +314,11 @@ func (srv *server) apiCmdReqUploadCmdsHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (srv *server) apiOK(w http.ResponseWriter, code int) {
-	http.Error(w, fmt.Sprintf("{error:%q, code:%v}", "", code), code)
+	http.Error(w, fmt.Sprintf(`{"code":%v}`, code), code)
 }
 
 func (srv *server) apiError(w http.ResponseWriter, err error, code int) {
-	http.Error(w, fmt.Sprintf("{error:%q, code:%v}", err.Error(), code), code)
+	http.Error(w, fmt.Sprintf(`{"error":%q, "code":%v}`, err.Error(), code), code)
 }
 
 func (srv *server) apiCheck(req cmdRequest, w http.ResponseWriter, r *http.Request) (*motor, bool) {
