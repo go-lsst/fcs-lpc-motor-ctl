@@ -10,6 +10,7 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-lsst/fcs-lpc-motor-ctl/bench"
 	"github.com/go-lsst/ncs/drivers/m702"
@@ -121,6 +122,112 @@ func (sc *Script) cmdMotor(args []string, w io.Writer) (m702.Parameter, error) {
 	}
 }
 
+func (sc *Script) cmdFindHomeX(args []string, w io.Writer) (m702.Parameter, error) {
+	return sc.cmdFindHome(sc.srv.motors()[0], args, w)
+}
+
+func (sc *Script) cmdPosX(args []string, w io.Writer) (m702.Parameter, error) {
+	return sc.cmdPos(sc.srv.motors()[0], args, w)
+}
+
+func (sc *Script) cmdRPMX(args []string, w io.Writer) (m702.Parameter, error) {
+	return sc.cmdRPM(sc.srv.motors()[0], args, w)
+}
+
+func (sc *Script) cmdAnglePosX(args []string, w io.Writer) (m702.Parameter, error) {
+	return sc.cmdAnglePos(sc.srv.motors()[0], args, w)
+}
+
+func (sc *Script) cmdFindHomeZ(args []string, w io.Writer) (m702.Parameter, error) {
+	return sc.cmdFindHome(sc.srv.motors()[1], args, w)
+}
+
+func (sc *Script) cmdPosZ(args []string, w io.Writer) (m702.Parameter, error) {
+	return sc.cmdPos(sc.srv.motors()[1], args, w)
+}
+
+func (sc *Script) cmdRPMZ(args []string, w io.Writer) (m702.Parameter, error) {
+	return sc.cmdRPM(sc.srv.motors()[1], args, w)
+}
+
+func (sc *Script) cmdAnglePosZ(args []string, w io.Writer) (m702.Parameter, error) {
+	return sc.cmdAnglePos(sc.srv.motors()[1], args, w)
+}
+
+func (sc *Script) cmdFindHome(m *motor, args []string, w io.Writer) (m702.Parameter, error) {
+	var p m702.Parameter
+
+	params := append([]m702.Parameter{},
+		newParameter(bench.ParamCmdReady),
+		newParameter(bench.ParamModePos),
+		newParameter(bench.ParamHome),
+		newParameter(bench.ParamCmdReady),
+	)
+
+	codec.PutUint32(params[0].Data[:], 0)
+	codec.PutUint32(params[1].Data[:], 0)
+	codec.PutUint32(params[2].Data[:], 1)
+	codec.PutUint32(params[3].Data[:], 1)
+
+	for _, p := range params {
+		err := m.Motor().WriteParam(p)
+		if err != nil {
+			return p, fmt.Errorf("error writing parameter %v to motor-%v: %v", p, m.name, err)
+		}
+	}
+
+	return p, nil
+}
+
+func (sc *Script) cmdPos(m *motor, args []string, w io.Writer) (m702.Parameter, error) {
+	var p m702.Parameter
+
+	return p, nil
+}
+
+func (sc *Script) cmdRPM(m *motor, args []string, w io.Writer) (m702.Parameter, error) {
+	var p m702.Parameter
+
+	switch len(args) {
+	case 0:
+		// TODO(sbinet): only retrieve the needed infos.
+		info, err := m.infos(1 * time.Second)
+		if err != nil {
+			return p, err
+		}
+		fmt.Fprintf(w, "get-%v-rpm=%d\n", m.name, info.RPMs)
+	case 1:
+		rpm, err := strconv.Atoi(args[0])
+		if err != nil {
+			return p, err
+		}
+		switch {
+		case rpm > 3000:
+			return p, fmt.Errorf("invalid RPM value (%v > 3000)", rpm)
+		case rpm < 0:
+			return p, fmt.Errorf("invalid RPM value (%v < 0)", rpm)
+		}
+		p = newParameter(bench.ParamRPMs)
+		codec.PutUint32(p.Data[:], uint32(rpm))
+		err = m.Motor().WriteParam(p)
+		if err != nil {
+			return p, err
+		}
+		fmt.Fprintf(w, "set-%v-rpm=%d\n", m.name, rpm)
+		return p, nil
+
+	default:
+		return p, fmt.Errorf("fcs: invalid number of parameters (got=%d. want=0,1)", len(args))
+	}
+	return p, nil
+}
+
+func (sc *Script) cmdAnglePos(m *motor, args []string, w io.Writer) (m702.Parameter, error) {
+	var p m702.Parameter
+
+	return p, nil
+}
+
 func (sc *Script) run(motor bench.Motor, r io.Reader, w io.Writer) error {
 	var (
 		err      error
@@ -177,9 +284,17 @@ func newScripter(srv *server, motor bench.Motor) Script {
 	script = Script{
 		srv: srv,
 		cmds: map[string]scriptCmd{
-			"get":   script.cmdGet,
-			"set":   script.cmdSet,
-			"motor": script.cmdMotor,
+			"get":         script.cmdGet,
+			"set":         script.cmdSet,
+			"motor":       script.cmdMotor,
+			"x-find-home": script.cmdFindHomeX,
+			"x-pos":       script.cmdPosX,
+			"x-rpm":       script.cmdRPMX,
+			"x-angle-pos": script.cmdAnglePosX,
+			"z-find-home": script.cmdFindHomeZ,
+			"z-pos":       script.cmdPosZ,
+			"z-rpm":       script.cmdRPMZ,
+			"z-angle-pos": script.cmdAnglePosZ,
 		},
 		motor: motor,
 	}
