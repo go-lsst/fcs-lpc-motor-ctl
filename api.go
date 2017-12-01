@@ -290,7 +290,7 @@ func (srv *server) apiCmdReqUploadCmdsHandler(w http.ResponseWriter, r *http.Req
 	}
 
 	var reply = struct {
-		Err    string `json:"error"`
+		Err    string `json:"error,omitempty"`
 		Code   int    `json:"code"`
 		Script string `json:"script"`
 	}{
