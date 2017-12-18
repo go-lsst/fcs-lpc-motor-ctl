@@ -83,6 +83,46 @@ $> curl -u faux-fcs:faux-fcs -X POST clrbinetsrv.in2p3.fr:5555/api/cmd/req-uploa
 
 ```
 $> go get github.com/go-lsst/fcs-lpc-motor-ctl/cmd/fcs-lpc-motor-cli
+$> fcs-lpc-motor-cli -h
+Usage: fcs-lpc-motor-cli [options] [cmd-or-script-file]
+
+ex:
+ $> fcs-lpc-motor-cli ./test.script
+ $> fcs-lpc-motor-cli x-angle-pos
+ $> fcs-lpc-motor-cli z-angle-pos +20
+ $> fcs-lpc-motor-cli
+
+options:
+  -addr string
+    	address:port of the fcs-lpc-motor-cli (default "http://clrbinetsrv.in2p3.fr:5555")
+  -p string
+    	user password for the authentication (default "faux-fcs")
+  -u string
+    	user name for the authentication (default "faux-fcs")
+
+$> fcs-lpc-motor-cli
+fcs-lpc-motor-cli: code: 200
+fcs-lpc-motor-cli: --- motor x ---
+fcs-lpc-motor-cli:  online:  true
+fcs-lpc-motor-cli:  status:  ready
+fcs-lpc-motor-cli:  mode:    home
+fcs-lpc-motor-cli:  RPMs:    1300
+fcs-lpc-motor-cli:  angle:   0
+fcs-lpc-motor-cli:  temp[0]: 35
+fcs-lpc-motor-cli:  temp[1]: 40
+fcs-lpc-motor-cli:  temp[2]: 46
+fcs-lpc-motor-cli:  temp[3]: 50
+fcs-lpc-motor-cli: --- motor z ---
+fcs-lpc-motor-cli:  online:  true
+fcs-lpc-motor-cli:  status:  ready
+fcs-lpc-motor-cli:  mode:    home
+fcs-lpc-motor-cli:  RPMs:    1300
+fcs-lpc-motor-cli:  angle:   0
+fcs-lpc-motor-cli:  temp[0]: 35
+fcs-lpc-motor-cli:  temp[1]: 40
+fcs-lpc-motor-cli:  temp[2]: 46
+fcs-lpc-motor-cli:  temp[3]: 52
+
 $> cat > test.script
 get 0.8.15
 set 0.8.15 1
@@ -103,23 +143,40 @@ z-angle-pos
 z-find-home
 ^C
 
-$> fcs-lpc-motor-cli -u faux-fcs -p faux-fcs ./test.script
-{"code":200,"script":"Pr-00.08.015: hex=[0x00 0x00 0x00 0x01] dec=[  0   0   0   1] (1)\nPr-00.08.015: hex=[0x00 0x00 0x00 0x01] dec=[  0   0   0   1] (1)\nset-x-angle-pos=20\nset-x-rpm=2000\nget-x-angle-pos=20\nget-x-rpm=2000\nset-z-angle-pos=-20\nset-z-rpm=2020\nget-z-rpm=2020\nget-z-angle-pos=-20\n"}
+$> fcs-lpc-motor-cli ./test.script
+fcs-lpc-motor-cli: code: 200
+fcs-lpc-motor-cli: script:
+Pr-00.08.015: hex=[0x00 0x00 0x00 0x00] dec=[  0   0   0   0] (0)
+Pr-00.08.015: hex=[0x00 0x00 0x00 0x01] dec=[  0   0   0   1] (1)
+set-x-angle-pos=20
+set-x-rpm=2000
+get-x-angle-pos=20
+get-x-rpm=2000
+set-z-angle-pos=-20
+set-z-rpm=2020
+get-z-rpm=2020
+get-z-angle-pos=-20
 
-$> fcs-lpc-motor-cli -h
-Usage: fcs-lpc-motor-cli [options] [cmd-or-script-file]
-
-ex:
- $> fcs-lpc-motor-cli ./test.script
- $> fcs-lpc-motor-cli x-angle-pos
- $> fcs-lpc-motor-cli z-angle-pos +20
- $> fcs-lpc-motor-cli
-
-options:
-  -addr string
-    	address:port of the fcs-lpc-motor-cli (default "http://clrbinetsrv.in2p3.fr:5555")
-  -p string
-    	user password for the authentication (default "faux-fcs")
-  -u string
-    	user name for the authentication (default "faux-fcs")
+$> fcs-lpc-motor-cli
+fcs-lpc-motor-cli: code: 200
+fcs-lpc-motor-cli: --- motor x ---
+fcs-lpc-motor-cli:  online:  true
+fcs-lpc-motor-cli:  status:  ready
+fcs-lpc-motor-cli:  mode:    home
+fcs-lpc-motor-cli:  RPMs:    2000
+fcs-lpc-motor-cli:  angle:   0
+fcs-lpc-motor-cli:  temp[0]: 36
+fcs-lpc-motor-cli:  temp[1]: 41
+fcs-lpc-motor-cli:  temp[2]: 45
+fcs-lpc-motor-cli:  temp[3]: 50
+fcs-lpc-motor-cli: --- motor z ---
+fcs-lpc-motor-cli:  online:  true
+fcs-lpc-motor-cli:  status:  ready
+fcs-lpc-motor-cli:  mode:    home
+fcs-lpc-motor-cli:  RPMs:    2020
+fcs-lpc-motor-cli:  angle:   0
+fcs-lpc-motor-cli:  temp[0]: 36
+fcs-lpc-motor-cli:  temp[1]: 40
+fcs-lpc-motor-cli:  temp[2]: 47
+fcs-lpc-motor-cli:  temp[3]: 52
 ```
