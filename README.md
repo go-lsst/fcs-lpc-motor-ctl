@@ -105,4 +105,21 @@ z-find-home
 
 $> fcs-lpc-motor-cli -u faux-fcs -p faux-fcs ./test.script
 {"code":200,"script":"Pr-00.08.015: hex=[0x00 0x00 0x00 0x01] dec=[  0   0   0   1] (1)\nPr-00.08.015: hex=[0x00 0x00 0x00 0x01] dec=[  0   0   0   1] (1)\nset-x-angle-pos=20\nset-x-rpm=2000\nget-x-angle-pos=20\nget-x-rpm=2000\nset-z-angle-pos=-20\nset-z-rpm=2020\nget-z-rpm=2020\nget-z-angle-pos=-20\n"}
+
+$> fcs-lpc-motor-cli -h
+Usage: fcs-lpc-motor-cli [options] [cmd-or-script-file]
+
+ex:
+ $> fcs-lpc-motor-cli ./test.script
+ $> fcs-lpc-motor-cli x-angle-pos
+ $> fcs-lpc-motor-cli z-angle-pos +20
+ $> fcs-lpc-motor-cli
+
+options:
+  -addr string
+    	address:port of the fcs-lpc-motor-cli (default "http://clrbinetsrv.in2p3.fr:5555")
+  -p string
+    	user password for the authentication (default "faux-fcs")
+  -u string
+    	user name for the authentication (default "faux-fcs")
 ```
