@@ -78,3 +78,31 @@ $> curl -u faux-fcs:faux-fcs -X POST clrbinetsrv.in2p3.fr:5555/api/cmd/req-uploa
 {"code":200,"script":"set-z-angle-pos=5\nget-z-angle-pos=5\n"}
 
 ```
+
+### fcs-lpc-motor-cli
+
+```
+$> go get github.com/go-lsst/fcs-lpc-motor-ctl/cmd/fcs-lpc-motor-cli
+$> cat > test.script
+get 0.8.15
+set 0.8.15 1
+
+
+x-angle-pos +20
+sleep 50s
+x-rpm 2000
+x-angle-pos
+x-rpm
+x-find-home
+
+z-angle-pos -20
+sleep 20s
+z-rpm 2020
+z-rpm
+z-angle-pos
+z-find-home
+^C
+
+$> fcs-lpc-motor-cli -u faux-fcs -p faux-fcs ./test.script
+{"code":200,"script":"Pr-00.08.015: hex=[0x00 0x00 0x00 0x01] dec=[  0   0   0   1] (1)\nPr-00.08.015: hex=[0x00 0x00 0x00 0x01] dec=[  0   0   0   1] (1)\nset-x-angle-pos=20\nset-x-rpm=2000\nget-x-angle-pos=20\nget-x-rpm=2000\nset-z-angle-pos=-20\nset-z-rpm=2020\nget-z-rpm=2020\nget-z-angle-pos=-20\n"}
+```
