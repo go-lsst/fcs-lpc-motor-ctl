@@ -65,3 +65,15 @@ type Motor interface {
 func NewMotorFrom(m m702.Motor) Motor {
 	return &m
 }
+
+type MotorInfos struct {
+	Motor  string            `json:"motor"` // x,z
+	Online bool              `json:"online"`
+	Status string            `json:"status"` // N/A,manual,hw-safety,ready
+	Mode   string            `json:"mode"`   // N/A,ready,home,position
+	RPMs   int               `json:"rpms"`
+	Angle  int               `json:"angle"`
+	Temps  [4]float64        `json:"temps"`
+	Histos map[string]string `json:"histos"`
+	Webcam string            `json:"webcam"`
+}

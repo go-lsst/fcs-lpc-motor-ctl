@@ -26,7 +26,7 @@ func (srv *server) apiMonHandler(w http.ResponseWriter, r *http.Request) {
 		srv.apiError(w, errInvalidHTTPMethod, http.StatusMethodNotAllowed)
 		return
 	}
-	var infos [2]motorInfos
+	var infos [2]bench.MotorInfos
 	for i, m := range srv.motors() {
 		info, err := m.infos(1 * time.Second)
 		if err != nil {
@@ -36,9 +36,9 @@ func (srv *server) apiMonHandler(w http.ResponseWriter, r *http.Request) {
 		infos[i] = info
 	}
 	var resp = struct {
-		Err   string        `json:"error,omitempty"`
-		Code  int           `json:"code"`
-		Infos [2]motorInfos `json:"infos"`
+		Err   string              `json:"error,omitempty"`
+		Code  int                 `json:"code"`
+		Infos [2]bench.MotorInfos `json:"infos"`
 	}{
 		Err:   "",
 		Code:  http.StatusOK,

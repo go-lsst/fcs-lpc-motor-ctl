@@ -118,13 +118,13 @@ func (m *motor) updateAnglePos() error {
 	return err
 }
 
-func (m *motor) infos(timeout time.Duration) (infos motorInfos, err error) {
+func (m *motor) infos(timeout time.Duration) (infos bench.MotorInfos, err error) {
 	online, err := m.isOnline(timeout)
 	if err != nil {
 		return infos, err
 	}
 	if !online {
-		infos = motorInfos{
+		infos = bench.MotorInfos{
 			Motor:  m.name,
 			Online: online,
 			Mode:   "N/A",
@@ -185,7 +185,7 @@ func (m *motor) infos(timeout time.Duration) (infos motorInfos, err error) {
 			mon.mode = motorModePos
 		}
 	}
-	infos = motorInfos{
+	infos = bench.MotorInfos{
 		Motor:  m.name,
 		Online: online,
 		Status: status,
@@ -251,16 +251,4 @@ type motorHistos struct {
 	Temp [4][]float64
 	Pos  []float64
 	RPMs []float64
-}
-
-type motorInfos struct {
-	Motor  string            `json:"motor"` // x,z
-	Online bool              `json:"online"`
-	Status string            `json:"status"` // N/A,manual,hw-safety,ready
-	Mode   string            `json:"mode"`   // N/A,ready,home,position
-	RPMs   int               `json:"rpms"`
-	Angle  int               `json:"angle"`
-	Temps  [4]float64        `json:"temps"`
-	Histos map[string]string `json:"histos"`
-	Webcam string            `json:"webcam"`
 }

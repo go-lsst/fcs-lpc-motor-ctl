@@ -155,7 +155,7 @@ type server struct {
 	cmdsReg  registry // clients interested in sending/receiving motor commands
 	videoReg registry // clients interested in receiving webcam data
 
-	datac chan motorInfos
+	datac chan bench.MotorInfos
 }
 
 func newServer(addr string) *server {
@@ -169,7 +169,7 @@ func newServer(addr string) *server {
 		session: newAuthRegistry(),
 		dataReg: newRegistry(),
 		cmdsReg: newRegistry(),
-		datac:   make(chan motorInfos),
+		datac:   make(chan bench.MotorInfos),
 	}
 
 	switch {
@@ -331,7 +331,7 @@ func (srv *server) publishData() {
 			if !motor.online {
 				motor.histos.rows = append(motor.histos.rows, monData{id: time.Now()})
 				plots := srv.makeMonPlots(imotor)
-				srv.datac <- motorInfos{
+				srv.datac <- bench.MotorInfos{
 					Motor:  motor.name,
 					Online: false,
 					Mode:   "N/A",
@@ -398,7 +398,7 @@ func (srv *server) publishData() {
 		plots := srv.makeMonPlots(imotor)
 
 		dbgPrintf("-- %s: online=%v status=%v mode=%v\n", motor.name, motor.online, status, mon.Mode())
-		infos := motorInfos{
+		infos := bench.MotorInfos{
 			Motor:  motor.name,
 			Online: motor.online,
 			Status: status,
