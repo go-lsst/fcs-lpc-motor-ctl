@@ -170,7 +170,7 @@ func runMon(usr, pwd, addr string) {
 		log.Fatalf("err: %q", mon.Error)
 	}
 	for _, info := range mon.Infos {
-		log.Printf("motor %v", info.Motor)
+		log.Printf("--- motor %v ---", info.Motor)
 		log.Printf(" online:  %v", info.Online)
 		log.Printf(" status:  %v", info.Status)
 		log.Printf(" mode:    %v", info.Mode)
