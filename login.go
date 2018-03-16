@@ -13,7 +13,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/satori/go.uuid"
+	"github.com/satori/uuid"
 )
 
 const loginPage = `
@@ -132,7 +132,7 @@ func (srv *server) checkCredentials(w http.ResponseWriter, r *http.Request) (web
 	if !ok {
 		cookie = &http.Cookie{
 			Name:  "FCS_TOKEN",
-			Value: uuid.NewV4().String(),
+			Value: uuid.Must(uuid.NewV4()).String(),
 		}
 		client = webClient{auth: false, token: cookie.Value}
 		srv.session.set(cookie.Value, client)
