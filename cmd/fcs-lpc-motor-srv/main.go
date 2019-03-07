@@ -101,6 +101,14 @@ func main() {
 		http.HandleFunc(v.name, v.h)
 	}
 
+	for i := range motors {
+		m := &motors[i]
+		errs := m.poll()
+		if len(errs) > 0 {
+			log.Fatalf("could not poll motor %q: %v", m.name, errs[0])
+		}
+	}
+
 	log.Fatal(http.ListenAndServe(*addr, nil))
 }
 
