@@ -28,7 +28,7 @@ func (srv *server) apiMonHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	var infos [2]bench.MotorInfos
 	for i, m := range srv.motors() {
-		info, err := m.infos(1 * time.Second)
+		info, err := m.infos(motorTimeout)
 		if err != nil {
 			srv.apiError(w, err, http.StatusServiceUnavailable)
 			return
@@ -395,7 +395,7 @@ func (srv *server) apiCheck(req cmdRequest, w http.ResponseWriter, r *http.Reque
 		return nil, false
 	}
 
-	if online, err := m.isOnline(1 * time.Second); err != nil || !online {
+	if online, err := m.isOnline(motorTimeout); err != nil || !online {
 		if err != nil {
 			srv.apiError(w, err, http.StatusServiceUnavailable)
 			return nil, false

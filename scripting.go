@@ -16,6 +16,10 @@ import (
 	"github.com/go-lsst/ncs/drivers/m702"
 )
 
+const (
+	motorTimeout = 5 * time.Second
+)
+
 type scriptCmd func(args []string, w io.Writer) (m702.Parameter, error)
 
 type Script struct {
@@ -355,7 +359,7 @@ func (sc *Script) dispatch(toks []string, w io.Writer) (m702.Parameter, error) {
 }
 
 func (sc *Script) check(m *motor) error {
-	online, err := m.isOnline(1 * time.Second)
+	online, err := m.isOnline(motorTimeout)
 	if err != nil {
 		return fmt.Errorf("fcs: error checking whether motor-%v is online: %v", m.name, err)
 	}

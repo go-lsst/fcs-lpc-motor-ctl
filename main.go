@@ -324,7 +324,7 @@ func (srv *server) publishData() {
 
 		{
 			var err error
-			motor.online, err = motor.isOnline(5 * time.Second)
+			motor.online, err = motor.isOnline(motorTimeout)
 			if err != nil {
 				log.Printf("-- motor-%v: offline (err=%v)\n", motor.name, err)
 			}
@@ -497,7 +497,7 @@ cmdLoop:
 			continue
 		}
 		{
-			online, err := srvMotor.isOnline(1 * time.Second)
+			online, err := srvMotor.isOnline(motorTimeout)
 			if err != nil || !online {
 				srv.sendReply(c.ws, cmdReply{Err: bench.ErrMotorOffline.Error(), Req: req})
 				continue
