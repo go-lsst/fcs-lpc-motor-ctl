@@ -63,6 +63,9 @@ func (m *motor) poll() []error {
 	} {
 		err := mm.ReadParam(p)
 		if err != nil {
+			go func() {
+				log.Panicf("error polling %q: Pr-%v: %v", m.name, *p, err)
+			}()
 			errs = append(errs, fmt.Errorf("error reading %v (motor-%s) Pr-%v: %v\n", m.addr, m.name, *p, err))
 		}
 	}
