@@ -8,6 +8,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -362,6 +363,7 @@ func (sc *Script) check(m *motor) error {
 		// return fmt.Sprintf("fcs: motor-%v is NOT ONLINE", m.name)
 	}
 	if m.isHWLocked() {
+		log.Printf("script-check: H/W lock for motor %q!", m.name)
 		return bench.ErrMotorHWLock
 	}
 	if m.isManual() {
