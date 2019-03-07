@@ -122,35 +122,35 @@ func (sc *Script) cmdMotor(args []string, w io.Writer) (m702.Parameter, error) {
 }
 
 func (sc *Script) cmdFindHomeX(args []string, w io.Writer) (m702.Parameter, error) {
-	return sc.cmdFindHome(&motors[0], args, w)
+	return sc.cmdFindHome(motors[0], args, w)
 }
 
 func (sc *Script) cmdPosX(args []string, w io.Writer) (m702.Parameter, error) {
-	return sc.cmdPos(&motors[0], args, w)
+	return sc.cmdPos(motors[0], args, w)
 }
 
 func (sc *Script) cmdRPMX(args []string, w io.Writer) (m702.Parameter, error) {
-	return sc.cmdRPM(&motors[0], args, w)
+	return sc.cmdRPM(motors[0], args, w)
 }
 
 func (sc *Script) cmdAnglePosX(args []string, w io.Writer) (m702.Parameter, error) {
-	return sc.cmdAnglePos(&motors[0], args, w)
+	return sc.cmdAnglePos(motors[0], args, w)
 }
 
 func (sc *Script) cmdFindHomeZ(args []string, w io.Writer) (m702.Parameter, error) {
-	return sc.cmdFindHome(&motors[1], args, w)
+	return sc.cmdFindHome(motors[1], args, w)
 }
 
 func (sc *Script) cmdPosZ(args []string, w io.Writer) (m702.Parameter, error) {
-	return sc.cmdPos(&motors[1], args, w)
+	return sc.cmdPos(motors[1], args, w)
 }
 
 func (sc *Script) cmdRPMZ(args []string, w io.Writer) (m702.Parameter, error) {
-	return sc.cmdRPM(&motors[1], args, w)
+	return sc.cmdRPM(motors[1], args, w)
 }
 
 func (sc *Script) cmdAnglePosZ(args []string, w io.Writer) (m702.Parameter, error) {
-	return sc.cmdAnglePos(&motors[1], args, w)
+	return sc.cmdAnglePos(motors[1], args, w)
 }
 
 func (sc *Script) cmdFindHome(m *motor, args []string, w io.Writer) (m702.Parameter, error) {

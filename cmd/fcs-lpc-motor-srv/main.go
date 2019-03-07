@@ -31,12 +31,12 @@ var (
 )
 
 var (
-	codec      = binary.BigEndian
-	xmotorAddr = "134.158.155.16:5021"
-	zmotorAddr = "134.158.155.16:5023"
-	motors     = []motor{
-		newMotor("x", xmotorAddr),
-		//		newMotor("z", zmotorAddr),
+	codec  = binary.BigEndian
+	xmotor = newMotor("x", "134.158.155.16:5021")
+	zmotor = newMotor("z", "134.158.155.16:5023")
+	motors = []*motor{
+		&xmotor,
+		//		&zmotor,
 	}
 )
 
@@ -101,8 +101,7 @@ func main() {
 		http.HandleFunc(v.name, v.h)
 	}
 
-	for i := range motors {
-		m := &motors[i]
+	for _, m := range motors {
 		errs := m.poll()
 		if len(errs) > 0 {
 			log.Fatalf("could not poll motor %q: %v", m.name, errs[0])
@@ -513,11 +512,11 @@ func getMotor(name string) (*motor, error) {
 	var m *motor
 	switch strings.ToLower(name) {
 	case "x":
-		m = &motors[0]
+		m = motors[0]
 	case "z":
 		// FIXME(sbinet): motor-z isn't available right now.
 		return nil, bench.ErrInvalidMotorName
-		m = &motors[1]
+		m = motors[1]
 	default:
 		return nil, bench.ErrInvalidMotorName
 	}

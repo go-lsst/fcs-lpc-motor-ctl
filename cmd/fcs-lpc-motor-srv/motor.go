@@ -44,6 +44,9 @@ func (m *motor) Motor() bench.Motor {
 }
 
 func (m *motor) poll() []error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	var errs []error
 	mm := m.Motor()
 	for _, p := range []*m702.Parameter{
