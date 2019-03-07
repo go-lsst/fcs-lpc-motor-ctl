@@ -13,7 +13,8 @@ import (
 	"os"
 	"sync"
 
-	"github.com/satori/uuid"
+	uuid "github.com/hashicorp/go-uuid"
+	"github.com/pkg/errors"
 )
 
 const loginPage = `
@@ -130,9 +131,14 @@ func (srv *server) checkCredentials(w http.ResponseWriter, r *http.Request) (web
 	}
 
 	if !ok {
+		v, err := uuid.GenerateUUID()
+		if err != nil {
+			return client, "", errors.Wrapf(err, "could not generate UUID")
+		}
+
 		cookie = &http.Cookie{
 			Name:  "FCS_TOKEN",
-			Value: uuid.Must(uuid.NewV4()).String(),
+			Value: v,
 		}
 		client = webClient{auth: false, token: cookie.Value}
 		srv.session.set(cookie.Value, client)
