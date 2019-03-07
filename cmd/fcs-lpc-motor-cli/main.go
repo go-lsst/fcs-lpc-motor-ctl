@@ -132,7 +132,7 @@ func runScript(f io.Reader, usr, pwd, addr string) {
 
 	err = json.Unmarshal(out.Bytes(), &cmd)
 	if err != nil {
-		log.Fatalf("could not unmarshal response: %v", err)
+		log.Fatalf("could not unmarshal response: %v\nresp: %q", err, out.Bytes())
 	}
 
 	log.Printf("code: %v", cmd.Code)
