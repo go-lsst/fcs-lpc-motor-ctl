@@ -24,6 +24,14 @@ const (
 	ParamTemp3          = "0.07.034"
 
 	ParamHWSafety = "0.08.040" // 0:OK, 1:HW-Safety ON
+
+	// Number of messages exchanged b/w master and slave.
+	// This number needs to be >0 on the slave to indicate the connection
+	// is correctly established.
+	ParamMasterSlaveExchange = "4.10.004"
+
+	// Ratio load (in %) on the master/slave axis.
+	ParamMasterSlaveLoadRatio = "4.020"
 )
 
 var (
