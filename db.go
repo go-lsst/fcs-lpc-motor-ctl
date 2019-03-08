@@ -30,7 +30,7 @@ func openDB(name string) *bolt.DB {
 }
 
 func (srv *server) monitor() {
-	hfreq := time.NewTicker(2 * time.Second)
+	hfreq := time.NewTicker(5 * time.Second)
 	defer hfreq.Stop()
 	lfreq := time.NewTicker(5 * time.Minute)
 	defer lfreq.Stop()
