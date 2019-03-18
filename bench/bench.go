@@ -32,6 +32,12 @@ const (
 
 	// Ratio load (in %) on the master/slave axis.
 	ParamMasterSlaveLoadRatio = "4.020"
+
+	// Encoder position value (master/slave synchro monitoring)
+	ParamMotorPosMonitor = "3.58"
+
+	ParamMotorStatusReady  = "10.001" // Motor ready:  0=off, 1=on
+	ParamMotorStatusActive = "10.002" // Motor active: 0=off, 1=on
 )
 
 var (
