@@ -250,11 +250,11 @@ func (srv *server) apiCmdReqAnglePosHandler(w http.ResponseWriter, r *http.Reque
 	}
 	req.tstamp = time.Now().UTC()
 	req.Type = "ctl"
-	if req.Value > +90 {
+	if req.Value > +91 {
 		srv.apiError(w, fmt.Errorf("invalid angle position (%v > +90.0)", req.Value), http.StatusBadRequest)
 		return
 	}
-	if req.Value < -90 {
+	if req.Value < -91 {
 		srv.apiError(w, fmt.Errorf("invalid angle position (%v < -90.0)", req.Value), http.StatusBadRequest)
 		return
 	}
