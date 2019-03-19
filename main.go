@@ -189,10 +189,14 @@ func newServer(addr string) *server {
 
 	switch {
 	case *mockFlag:
-		srv.motor.x = newMotorMock("x", "127.0.0.1:5020")
-		srv.motor.z = newMotorMock("z", "127.0.0.1:5021")
+		srv.motor.x = newMotorMock("x", "127.0.0.1:5020") // master-x
+		slave := newMotorSlave("x", "127.0.0.1:5022")     // slave-x
+		srv.motor.x.slave = &slave
+		srv.motor.z = newMotorMock("z", "127.0.0.1:5021") // master-z
 	case *localFlag:
 		srv.motor.x = newMotor("x", "192.168.0.21:502") // master-x
+		slave := newMotorSlave("x", "192.168.0.22:502") // slave-x
+		srv.motor.x.slave = &slave
 		srv.motor.z = newMotor("z", "192.168.0.23:502") // master-z
 		if *webcamFlag {
 			srv.webcam = "192.168.0.30:80"
@@ -353,6 +357,7 @@ func (srv *server) publishData() {
 					Online: false,
 					Status: "N/A",
 					FSM:    "N/A",
+					Sync:   false,
 					Mode:   "N/A",
 					Histos: plots,
 					Webcam: srv.fetchWebcamImage(),
@@ -423,6 +428,7 @@ func (srv *server) publishData() {
 			Online: motor.online,
 			Status: status,
 			FSM:    fsm,
+			Sync:   motor.isSyncOK(),
 			Mode:   mon.Mode(),
 			RPMs:   int(mon.rpms),
 			Angle:  int(mon.angle),
@@ -541,6 +547,17 @@ cmdLoop:
 	retry:
 		params := make([]m702.Parameter, 1)
 		switch req.Name {
+		case cmdReqStop:
+			dbgPrintf("cmd-req-stop:\n")
+			params = append([]m702.Parameter{},
+				newParameter(bench.ParamModePos),
+				newParameter(bench.ParamHome),
+				newParameter(bench.ParamCmdReady),
+			)
+			codec.PutUint32(params[0].Data[:], 0)
+			codec.PutUint32(params[1].Data[:], 0)
+			codec.PutUint32(params[2].Data[:], 0)
+
 		case cmdReqReset:
 			dbgPrintf("cmd-req-reset:\n")
 			params = append([]m702.Parameter{},
@@ -703,6 +720,7 @@ type cmdReply struct {
 
 // list of all possible and known command-request names
 const (
+	cmdReqStop       = "stop"
 	cmdReqReset      = "reset"
 	cmdReqFindHome   = "find-home"
 	cmdReqPos        = "pos"

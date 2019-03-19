@@ -300,6 +300,10 @@ th {
 								<th><paper-button id="fcs-status-x-monitor" toggles disabled raised class="fcs-switch green">N/A</paper-button></th>
 								<th><paper-button id="fcs-status-z-monitor" toggles disabled raised class="fcs-switch green">N/A</paper-button></th>
 							</tr>
+							<tr><th style="text-align:left">Sync</th>
+								<th><paper-button id="fcs-status-x-sync" toggles disabled raised class="fcs-switch green">N/A</paper-button></th>
+								<th><paper-button id="fcs-status-z-sync" toggles disabled raised class="fcs-switch green">N/A</paper-button></th>
+							</tr>
 							<tr><th style="text-align:left">Mode</th>
 								<th><paper-button id="fcs-status-x-mode" toggles disabled raised class="fcs-switch green">N/A</paper-button></th>
 								<th><paper-button id="fcs-status-z-mode" toggles disabled raised class="fcs-switch green">N/A</paper-button></th>
@@ -336,7 +340,7 @@ th {
 				<br>
 				<span>---</span>
 				<br>
-				<paper-button id="fcs-motor-stop" raised class="fcs-switch green">STOP</paper-button>
+				<paper-button id="fcs-motor-stop" raised class="fcs-switch green" on-tap="fcsSendCommand">STOP</paper-button>
 			</div>
 		</paper-card>
 	</template>
@@ -346,6 +350,10 @@ th {
 			is:"fcs-motors-status",
 			properties: {
 				motor: String
+			},
+			fcsSendCommand: function() {
+				fcs.sendStop({motor:"x"});
+				fcs.sendStop({motor:"z"});
 			},
 		});
 	</script>

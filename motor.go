@@ -7,6 +7,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"math"
 	"net"
 	"strings"
 	"sync"
@@ -185,12 +186,45 @@ func (m *motor) isManual() bool {
 	return codec.Uint32(m.params.Manual.Data[:]) == 1
 }
 
+func (m *motor) isSyncOK() bool {
+	switch m.name {
+	case "x":
+		master, err1 := m.sync()
+		slave, err2 := m.slave.sync()
+		if err1 != nil || err2 != nil {
+			return false
+		}
+		if master <= 10 || slave <= 10 {
+			return false
+		}
+		return math.Abs(float64(master-slave)) < 20
+	case "z":
+		return true
+	default:
+		return false
+	}
+}
+
 func (m *motor) rpms() uint32 {
 	return codec.Uint32(m.params.RPMs.Data[:])
 }
 
 func (m *motor) angle() float64 {
 	return float64(int32(codec.Uint32(m.params.ReadAngle.Data[:]))) * 0.1
+}
+
+func (m *motor) sync() (int, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	mm := m702.New(m.addr)
+	p := newParameter(bench.ParamMasterSlaveExchange)
+	err := m.retry(func() error { return mm.ReadParam(&p) })
+	if err != nil {
+		return 0, errors.Wrapf(err, "motor %q: could not read %v", m.name, p)
+	}
+
+	return int(codec.Uint32(p.Data[:])), nil
 }
 
 // updateAnglePos is used to track the current motor position when
@@ -256,6 +290,7 @@ func (m *motor) infos(timeout time.Duration) (infos bench.MotorInfos, err error)
 			Motor:  m.name,
 			Online: online,
 			FSM:    "N/A",
+			Sync:   false,
 			Mode:   "N/A",
 		}
 		return infos, err
@@ -297,6 +332,7 @@ func (m *motor) infos(timeout time.Duration) (infos bench.MotorInfos, err error)
 	ready := !manual
 	hwsafetyON := m.isHWLocked()
 	fsm := m.fsm()
+	sync := m.isSyncOK()
 
 	switch {
 	case hwsafetyON:
@@ -320,6 +356,7 @@ func (m *motor) infos(timeout time.Duration) (infos bench.MotorInfos, err error)
 		Online: online,
 		Status: status,
 		FSM:    fsm,
+		Sync:   sync,
 		Mode:   mon.Mode(),
 		RPMs:   int(mon.rpms),
 		Angle:  int(mon.angle),

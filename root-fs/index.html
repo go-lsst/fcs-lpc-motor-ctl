@@ -107,6 +107,20 @@ fcs.sendReset = function(event) {
 	fcs.chan.cmds.send(JSON.stringify(data));
 }
 
+fcs.sendStop = function(event) {
+	// console.log("sending STOP command...");
+	var motor = event.motor;
+	var data = {
+		motor: motor,
+		type: "ctl",
+		token: fcs.token,
+		name: "stop",
+	};
+	// console.log("sending command: "+JSON.stringify(data));
+
+	fcs.chan.cmds.send(JSON.stringify(data));
+}
+
 fcs.refreshMon = function(data) {
 	var plots = ["temperature", "position", "rpms"];
 	var histos = data.histos;
@@ -149,7 +163,7 @@ window.onload = function() {
 		var update = document.getElementById("fcs-status-update");
 		if (update == null) {
 			// main page, after credentials verification, not there yet...
-				return;
+			return;
 		}
 
 		update.innerHTML=fcs.last_update.toUTCString();
@@ -162,6 +176,7 @@ window.onload = function() {
 		document.getElementById("fcs-status-"+motor+"-online").active = data.online;
 		document.getElementById("fcs-status-"+motor+"-ready").active = ready;
 		document.getElementById("fcs-status-"+motor+"-monitor").active = monitor;
+		document.getElementById("fcs-status-"+motor+"-sync").active = data.sync;
 		document.getElementById("fcs-status-"+motor+"-rpms").innerHTML = data.rpms;
 		document.getElementById("fcs-status-"+motor+"-angle").innerHTML = data.angle + " °";
 		for (var i=0; i<data.temps.length;i++) {
@@ -169,6 +184,12 @@ window.onload = function() {
 		}
 
 		document.getElementById("fcs-status-"+motor+"-monitor").innerHTML = data.fsm;
+
+		if (data.sync) {
+			document.getElementById("fcs-status-"+motor+"-sync").innerHTML = "OK";
+		} else {
+			document.getElementById("fcs-status-"+motor+"-sync").innerHTML = "ERR";
+		}
 
 		if (data.online) {
 			document.getElementById("fcs-status-"+motor+"-online").innerHTML = "Online";

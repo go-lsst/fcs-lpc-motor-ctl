@@ -28,6 +28,7 @@ type Motor struct {
 		Manual     uint32
 		CmdReady   uint32
 		FSM        uint32
+		Sync       bool
 		HWSafety   uint32
 		Home       uint32
 		ModePos    uint32
@@ -51,6 +52,7 @@ func (m *Motor) run() {
 			m.setHWSafety(1)
 		case <-ticker.C:
 			m.state.FSM = 4
+			m.state.Sync = true
 			m.genTemp()
 		}
 	}
