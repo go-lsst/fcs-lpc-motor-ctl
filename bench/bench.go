@@ -23,7 +23,7 @@ const (
 	ParamTemp2          = "0.07.006"
 	ParamTemp3          = "0.07.034"
 
-	ParamHWSafety = "0.08.040" // 0:OK, 1:HW-Safety ON
+	ParamHWSafety = "0.08.040" // 0:HW-Safety On, 1:HW-Safety Off
 
 	// Number of messages exchanged b/w master and slave.
 	// This number needs to be >0 on the slave to indicate the connection
@@ -38,6 +38,10 @@ const (
 
 	ParamMotorStatusReady  = "10.001" // Motor ready:  0=off, 1=on
 	ParamMotorStatusActive = "10.002" // Motor active: 0=off, 1=on
+
+	ParamPositionReached = "0.19.033" // position: 0=no, 1=reached
+
+	ParamMotorStatus = "0.60" // overall motor status (copied from 10.101)
 )
 
 var (
