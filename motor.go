@@ -54,6 +54,10 @@ func (m *motor) poll() []error {
 	mm := m.Motor()
 	for _, p := range []*m702.Parameter{
 		&m.params.Manual,
+		&m.params.CmdReady,
+		&m.params.MotorStatus,
+		&m.params.MotorReady,
+		&m.params.MotorActive,
 		&m.params.HWSafety,
 		&m.params.Home,
 		&m.params.ModePos,
@@ -92,6 +96,25 @@ func (m *motor) isOnline(timeout time.Duration) (bool, error) {
 		online = true
 	}
 	return online, err
+}
+
+func (m *motor) fsm() string {
+	v := codec.Uint32(m.params.MotorStatus.Data[:])
+	switch v {
+	case 0:
+		return "inhibit"
+	case 1:
+		return "ready"
+	case 2:
+		return "stop"
+	case 3:
+		return "scan"
+	case 4:
+		return "run"
+	case 9:
+		return "trip"
+	}
+	return fmt.Sprintf("fsm=%d", v)
 }
 
 func (m *motor) isHWLocked() bool {
@@ -159,6 +182,7 @@ func (m *motor) infos(timeout time.Duration) (infos bench.MotorInfos, err error)
 		infos = bench.MotorInfos{
 			Motor:  m.name,
 			Online: online,
+			FSM:    "N/A",
 			Mode:   "N/A",
 		}
 		return infos, err
@@ -199,6 +223,7 @@ func (m *motor) infos(timeout time.Duration) (infos bench.MotorInfos, err error)
 	manual := m.isManual()
 	ready := !manual
 	hwsafetyON := m.isHWLocked()
+	fsm := m.fsm()
 
 	switch {
 	case hwsafetyON:
@@ -221,6 +246,7 @@ func (m *motor) infos(timeout time.Duration) (infos bench.MotorInfos, err error)
 		Motor:  m.name,
 		Online: online,
 		Status: status,
+		FSM:    fsm,
 		Mode:   mon.Mode(),
 		RPMs:   int(mon.rpms),
 		Angle:  int(mon.angle),
@@ -260,27 +286,33 @@ func newMotorMock(name, addr string) motor {
 }
 
 type motorParams struct {
-	Manual     m702.Parameter
-	CmdReady   m702.Parameter
-	HWSafety   m702.Parameter
-	Home       m702.Parameter
-	ModePos    m702.Parameter
-	RPMs       m702.Parameter
-	WriteAngle m702.Parameter
-	ReadAngle  m702.Parameter
-	Temps      [4]m702.Parameter
+	Manual      m702.Parameter
+	CmdReady    m702.Parameter
+	MotorReady  m702.Parameter
+	MotorActive m702.Parameter
+	MotorStatus m702.Parameter
+	HWSafety    m702.Parameter
+	Home        m702.Parameter
+	ModePos     m702.Parameter
+	RPMs        m702.Parameter
+	WriteAngle  m702.Parameter
+	ReadAngle   m702.Parameter
+	Temps       [4]m702.Parameter
 }
 
 func newMotorParams() motorParams {
 	return motorParams{
-		Manual:     newParameter(bench.ParamManualOverride),
-		CmdReady:   newParameter(bench.ParamCmdReady),
-		HWSafety:   newParameter(bench.ParamHWSafety),
-		Home:       newParameter(bench.ParamHome),
-		ModePos:    newParameter(bench.ParamModePos),
-		RPMs:       newParameter(bench.ParamRPMs),
-		WriteAngle: newParameter(bench.ParamWritePos),
-		ReadAngle:  newParameter(bench.ParamReadPos),
+		Manual:      newParameter(bench.ParamManualOverride),
+		CmdReady:    newParameter(bench.ParamCmdReady),
+		MotorStatus: newParameter(bench.ParamMotorStatus),
+		MotorReady:  newParameter(bench.ParamMotorStatusReady),
+		MotorActive: newParameter(bench.ParamMotorStatusActive),
+		HWSafety:    newParameter(bench.ParamHWSafety),
+		Home:        newParameter(bench.ParamHome),
+		ModePos:     newParameter(bench.ParamModePos),
+		RPMs:        newParameter(bench.ParamRPMs),
+		WriteAngle:  newParameter(bench.ParamWritePos),
+		ReadAngle:   newParameter(bench.ParamReadPos),
 		Temps: [4]m702.Parameter{
 			newParameter(bench.ParamTemp0),
 			newParameter(bench.ParamTemp1),

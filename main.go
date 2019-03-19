@@ -349,6 +349,8 @@ func (srv *server) publishData() {
 				srv.datac <- bench.MotorInfos{
 					Motor:  motor.name,
 					Online: false,
+					Status: "N/A",
+					FSM:    "N/A",
 					Mode:   "N/A",
 					Histos: plots,
 					Webcam: srv.fetchWebcamImage(),
@@ -391,6 +393,7 @@ func (srv *server) publishData() {
 		manual := motor.isManual()
 		ready := !manual
 		hwsafetyON := motor.isHWLocked()
+		fsm := motor.fsm()
 
 		switch {
 		case hwsafetyON:
@@ -417,6 +420,7 @@ func (srv *server) publishData() {
 			Motor:  motor.name,
 			Online: motor.online,
 			Status: status,
+			FSM:    fsm,
 			Mode:   mon.Mode(),
 			RPMs:   int(mon.rpms),
 			Angle:  int(mon.angle),

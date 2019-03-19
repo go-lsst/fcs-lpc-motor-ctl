@@ -92,6 +92,7 @@ type MotorInfos struct {
 	Motor  string            `json:"motor"` // x,z
 	Online bool              `json:"online"`
 	Status string            `json:"status"` // N/A,manual,hw-safety,ready
+	FSM    string            `json:"fsm"`    // HW-safety, Ready, Stop, Scan, Run, Trip
 	Mode   string            `json:"mode"`   // N/A,ready,home,position
 	RPMs   int               `json:"rpms"`
 	Angle  int               `json:"angle"`

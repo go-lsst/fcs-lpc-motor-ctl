@@ -1,28 +1,28 @@
 <!DOCTYPE html>
 <!-- Copyright 2016 The go-lsst Authors. All rights reserved.
-  -- Use of this source code is governed by a BSD-style
-  -- license that can be found in the LICENSE file.
-  -->
+	-- Use of this source code is governed by a BSD-style
+	-- license that can be found in the LICENSE file.
+-->
 <html>
-  <head>
-    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
-    <meta charset="utf-8">
-    <title>FCS LPC Testbench</title>
-    <script src="bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
-    <link rel="import" href="bower_components/paper-styles/paper-styles-classes.html">
-    <link rel="import" href="fcs-lpc-motor.html">
-    <style>
-      html {
-        overflow-y: auto;
-      }
-      body {
-        font-family: 'Roboto', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-        font-weight: 300;
-      }
-    </style>
-  </head>
-  <script>
-"use strict";
+	<head>
+		<meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+		<meta charset="utf-8">
+		<title>FCS LPC Testbench</title>
+		<script src="bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+		<link rel="import" href="bower_components/paper-styles/paper-styles-classes.html">
+		<link rel="import" href="fcs-lpc-motor.html">
+		<style>
+html {
+	overflow-y: auto;
+}
+			body {
+				font-family: 'Roboto', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+				font-weight: 300;
+			}
+		</style>
+	</head>
+	<script>
+		"use strict";
 var fcs = {
 	user: "N/A",
 	token: "",
@@ -110,14 +110,14 @@ fcs.refreshWebcam = function(data) {
 }
 
 function getCookie(cname) {
-    var name = cname + "=";
-    var ca = document.cookie.split(';');
-    for(var i=0; i<ca.length; i++) {
-        var c = ca[i];
-        while (c.charAt(0)==' ') c = c.substring(1);
-        if (c.indexOf(name) == 0) return c.substring(name.length,c.length);
-    }
-    return "";
+	var name = cname + "=";
+	var ca = document.cookie.split(';');
+	for(var i=0; i<ca.length; i++) {
+		var c = ca[i];
+		while (c.charAt(0)==' ') c = c.substring(1);
+		if (c.indexOf(name) == 0) return c.substring(name.length,c.length);
+	}
+	return "";
 }
 
 window.onload = function() {
@@ -135,22 +135,26 @@ window.onload = function() {
 		var update = document.getElementById("fcs-status-update");
 		if (update == null) {
 			// main page, after credentials verification, not there yet...
-			return;
+				return;
 		}
 
 		update.innerHTML=fcs.last_update.toUTCString();
 		fcs.refreshMon(data);
 		fcs.refreshWebcam(data.webcam);
 		// console.log("data:"+JSON.stringify(data));
-		
+
 		var ready = data.status == "ready";
+		var monitor = data.fsm == "run";
 		document.getElementById("fcs-status-"+motor+"-online").active = data.online;
 		document.getElementById("fcs-status-"+motor+"-ready").active = ready;
+		document.getElementById("fcs-status-"+motor+"-monitor").active = monitor;
 		document.getElementById("fcs-status-"+motor+"-rpms").innerHTML = data.rpms;
 		document.getElementById("fcs-status-"+motor+"-angle").innerHTML = data.angle + " °";
 		for (var i=0; i<data.temps.length;i++) {
 			document.getElementById("fcs-status-"+motor+"-temp-"+i).innerHTML = data.temps[i]+" °C";
 		}
+
+		document.getElementById("fcs-status-"+motor+"-monitor").innerHTML = data.fsm;
 
 		if (data.online) {
 			document.getElementById("fcs-status-"+motor+"-online").innerHTML = "Online";
@@ -162,7 +166,7 @@ window.onload = function() {
 
 		document.getElementById("fcs-status-"+motor+"-mode").innerHTML = data.mode;
 		document.getElementById("fcs-status-"+motor+"-mode").active = ready;
-	
+
 		fcs.ready[motor] = ready;
 		var ids = [
 			"fcs-ctl-"+motor+"-rpm",
@@ -202,33 +206,33 @@ window.onload = function() {
 					}
 					text += "</pre>"
 					document.getElementById("snfusion-gen-"+snfusion_id).innerHTML = text;
-				}
-				break;
-			case "plot-done":
-				document.getElementById("snfusion-plot-"+snfusion_id).innerHTML = obj["svg"];
-				break;
-			case "zip-done":
-				var div = document.getElementById("snfusion-report-"+snfusion_id);
-				var dl = document.createElement("form");
-				dl.id = "snfusion-submit-form-" + id;
-				dl.method="post";
-				dl.action="http://{{.Addr}}/download?file="+encodeURI(obj.href);
-				dl.innerHTML = "<paper-button raised onclick=\"submitForm("+id+")\" class=\"colorful\" id=\"snfusion-download-"+snfusion_id+"\">Download ZIP<br>(Simulation - "+id+")</paper-button>";
-				div.appendChild(dl); 
-				break;
-		}
-	}
+					}
+					break;
+					case "plot-done":
+					document.getElementById("snfusion-plot-"+snfusion_id).innerHTML = obj["svg"];
+					break;
+					case "zip-done":
+					var div = document.getElementById("snfusion-report-"+snfusion_id);
+					var dl = document.createElement("form");
+					dl.id = "snfusion-submit-form-" + id;
+					dl.method="post";
+					dl.action="http://{{.Addr}}/download?file="+encodeURI(obj.href);
+					dl.innerHTML = "<paper-button raised onclick=\"submitForm("+id+")\" class=\"colorful\" id=\"snfusion-download-"+snfusion_id+"\">Download ZIP<br>(Simulation - "+id+")</paper-button>";
+					div.appendChild(dl); 
+					break;
+					}
+					}
 
-	fcs.chan.webcam.onopen = function() {}
-	fcs.chan.webcam.onclose = function() {}
+					fcs.chan.webcam.onopen = function() {}
+					fcs.chan.webcam.onclose = function() {}
 
-	fcs.chan.webcam.onmessage = function(event) {
-	}
+					fcs.chan.webcam.onmessage = function(event) {
+					}
 
-}
+					}
 	</script>
 
-  
+
 	<body unresolved class="layout vertical center-center">
 
 		<div id="fcs-app">
