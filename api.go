@@ -276,6 +276,63 @@ func (srv *server) apiCmdReqAnglePosHandler(w http.ResponseWriter, r *http.Reque
 	srv.apiOK(w, http.StatusOK)
 }
 
+func (srv *server) apiCmdReqAngleWaitHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		srv.apiError(w, errInvalidHTTPMethod, http.StatusMethodNotAllowed)
+		return
+	}
+	defer r.Body.Close()
+
+	var req cmdRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		srv.apiError(w, fmt.Errorf("error decoding JSON request: %v", err), http.StatusBadRequest)
+		return
+	}
+	req.tstamp = time.Now().UTC()
+	req.Type = "ctl"
+
+	m, ok := srv.apiCheck(req, w, r)
+	if !ok {
+		return
+	}
+
+	const duration = 5 * time.Minute
+	timeout := time.NewTimer(duration)
+	defer timeout.Stop()
+
+	done := make(chan int)
+	defer close(done)
+
+	p := newParameter(bench.ParamPositionReached)
+	go func() {
+		ticks := time.NewTicker(5 * time.Second)
+		defer ticks.Stop()
+		for range ticks.C {
+			err = srv.apiRun(func() error { return m.Motor().ReadParam(&p) })
+			if err == nil && codec.Uint32(p.Data[:]) == 1 {
+				done <- 1
+				return
+			}
+		}
+	}()
+
+	select {
+	case <-timeout.C:
+		srv.apiError(w, errors.Errorf("timeout (%v) waiting for position reached", duration), http.StatusInternalServerError)
+		return
+
+	case <-done:
+		// ok
+	}
+	if err != nil {
+		srv.apiError(w, fmt.Errorf("error writing parameter %v to motor-%v: %v", p, m.name, err), http.StatusInternalServerError)
+		return
+	}
+
+	srv.apiOK(w, http.StatusOK)
+}
+
 func (srv *server) apiCmdReqUploadCmdsHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		srv.apiError(w, errInvalidHTTPMethod, http.StatusMethodNotAllowed)

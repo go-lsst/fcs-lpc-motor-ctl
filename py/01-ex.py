@@ -23,7 +23,14 @@ print("ready.")
 print("sending x-angle-pos -15...")
 cli.x.set_angle(-15)
 cli.x.rpm = 1300
+cli.x.wait()
 print("x-angle-pos = {}".format(cli.x.get_angle()))
+
+print("sending z-angle-pos -15...")
+cli.z.set_angle(-15)
+cli.z.rpm = 1300
+cli.z.wait()
+print("z-angle-pos = {}".format(cli.z.get_angle()))
 
 print("infos: {}".format(cli.infos()))
 
@@ -40,10 +47,10 @@ print("x-rpm= {}".format(cli.x.rpm))
 print("x-online: {}".format(cli.x.is_online()))
 print("x-mode: {}".format(cli.x.mode))
 
-for motor in [cli.x,]: ##, cli.z]:
+for motor in [cli.x, cli.z]:
     print("motor {} -- angle: {}".format(motor.name, motor.angle))
     motor.angle += 10
-    motor.sleep(5)
+    motor.wait()
     print("motor {} -- angle: {}".format(motor.name, motor.angle))
     print("motor {} -- RPMs:  {}".format(motor.name, motor.rpm))
     motor.rpm -= 100
@@ -54,12 +61,14 @@ for motor in [cli.x,]: ##, cli.z]:
 print("*"*80)
 while 1:
     print("-"*80)
-    print("motor {} -- angle: {}".format(motor.name, motor.angle))
-    motor.angle = -10
-    motor.sleep(10)
-    print("motor {} -- angle: {}".format(motor.name, motor.angle))
-    motor.angle = +10
-    motor.sleep(10)
-    print("motor {} -- angle: {}".format(motor.name, motor.angle))
-
-
+    print("motor {} -- angle: {}".format(cli.x.name, cli.x.angle))
+    print("motor {} -- angle: {}".format(cli.z.name, cli.z.angle))
+    cli.x.angle = 22
+    cli.z.angle = 22
+    cli.wait()
+    print("motor {} -- angle: {}".format(cli.x.name, cli.x.angle))
+    print("motor {} -- angle: {}".format(cli.z.name, cli.z.angle))
+    cli.x.angle -= 20
+    cli.z.angle -= 20
+    cli.wait()
+    pass

@@ -66,6 +66,10 @@ class Client(object):
                 return False
         return True
 
+    def wait(self):
+        self.x.wait()
+        self.z.wait()
+
     def _run(self, data):
         data =json.dumps(data)
         if self.verbose:
@@ -135,6 +139,19 @@ class Motor(object):
         return int(self._run({"motor":self.name, "cmds":self.name+"-rpm"}))
 
     rpm = property(get_rpm, set_rpm)
+
+    def wait(self):
+        data = json.dumps({"motor":self.name})
+        self.cli.hdlr.request("GET", "/api/cmd/req-wait-pos", data, self.cli.hdr)
+        resp = self.cli.hdlr.getresponse()
+        v = resp.read()
+        if self.cli.verbose:
+            print("response: %r" % (v,))
+            print("response: %s" % (json.loads(v),))
+        v = json.loads(v)
+        if resp.status != 200:
+            raise RuntimeError("invalid status: %s -- error: %s" % (resp.status,v["error"]))
+        return v
 
     def infos(self):
         infos = self.cli.infos()

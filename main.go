@@ -104,6 +104,11 @@ func main() {
 			acl:  true,
 		},
 		{
+			name: "/api/cmd/req-wait-pos",
+			h:    srv.apiCmdReqAngleWaitHandler,
+			acl:  true,
+		},
+		{
 			name: "/api/cmd/req-upload-cmds",
 			h:    srv.apiCmdReqUploadCmdsHandler,
 			acl:  true,
