@@ -160,7 +160,7 @@ class Motor(object):
         self._run({"motor":self.name, "cmds":self.name+"-rpm %s" % (int(rpm),)})
 
     def get_rpm(self):
-        return int(self._run({"motor":self.name, "cmds":self.name+"-rpm"}))
+        return int(self._get("/api/cmd/req-get-rpm"))
 
     rpm = property(get_rpm, set_rpm)
 

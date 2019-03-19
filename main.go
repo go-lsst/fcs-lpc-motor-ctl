@@ -94,6 +94,11 @@ func main() {
 			acl:  true,
 		},
 		{
+			name: "/api/cmd/req-get-rpm",
+			h:    srv.apiCmdReqGetRPMHandler,
+			acl:  true,
+		},
+		{
 			name: "/api/cmd/req-rpm",
 			h:    srv.apiCmdReqRPMHandler,
 			acl:  true,
