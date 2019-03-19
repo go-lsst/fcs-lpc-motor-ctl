@@ -533,8 +533,8 @@ func (srv *server) apiRun(f func() error) error {
 	var err error
 	for i := 0; i < retries; i++ {
 		err = f()
-		if err != nil {
-			continue
+		if err == nil {
+			return nil
 		}
 	}
 	return err

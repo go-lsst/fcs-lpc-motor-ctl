@@ -15,6 +15,7 @@ import (
 	"github.com/go-lsst/fcs-lpc-motor-ctl/bench"
 	"github.com/go-lsst/fcs-lpc-motor-ctl/mock"
 	"github.com/go-lsst/ncs/drivers/m702"
+	"github.com/pkg/errors"
 )
 
 func (srv *server) getMotor(name string) (*motor, error) {
@@ -63,7 +64,14 @@ func (m *motor) poll() []error {
 		&m.params.Temps[2],
 		&m.params.Temps[3],
 	} {
-		err := mm.ReadParam(p)
+		var err error
+	retry:
+		for i := 0; i < 10; i++ {
+			err = mm.ReadParam(p)
+			if err == nil {
+				break retry
+			}
+		}
 		if err != nil {
 			errs = append(errs, fmt.Errorf("error reading %v (motor-%s) Pr-%v: %v\n", m.addr, m.name, *p, err))
 		}
@@ -116,6 +124,29 @@ func (m *motor) updateAnglePos() error {
 	err := mm.WriteParam(param)
 	m.mu.Unlock()
 	return err
+}
+
+func (m *motor) reset() error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	mm := m702.New(m.addr)
+	ps := append([]m702.Parameter{},
+		newParameter(bench.ParamMotorReset),
+		newParameter(bench.ParamMotorReset),
+		newParameter(bench.ParamMotorReset),
+	)
+	codec.PutUint32(ps[0].Data[:], 0)
+	codec.PutUint32(ps[1].Data[:], 1)
+	codec.PutUint32(ps[2].Data[:], 0)
+
+	for _, p := range ps {
+		err := m.retry(func() error { return mm.WriteParam(p) })
+		if err != nil {
+			return errors.Wrapf(err, "motor %q: could not send reset", m.name)
+		}
+	}
+	return nil
 }
 
 func (m *motor) infos(timeout time.Duration) (infos bench.MotorInfos, err error) {
@@ -196,6 +227,18 @@ func (m *motor) infos(timeout time.Duration) (infos bench.MotorInfos, err error)
 	}
 
 	return infos, err
+}
+
+func (m *motor) retry(f func() error) error {
+	const retries = 10
+	var err error
+	for i := 0; i < retries; i++ {
+		err = f()
+		if err == nil {
+			return err
+		}
+	}
+	return err
 }
 
 func newMotor(name, addr string) motor {
