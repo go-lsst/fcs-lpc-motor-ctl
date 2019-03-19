@@ -476,7 +476,7 @@ paper-icon-button {
 		<div>
 			<div>{{title}}</div>
 			<div class="layout horizontal">
-				<paper-button raised="[[raised]]" disabled="[[disabled]]" class="colorful" on-tap="fcsSendCommand" id="fcs-ctl-{{motor}}-{{cmd}}-submit">RESET</paper-button>
+				<paper-button raised="[[raised]]" disabled="[[disabled]]" class="colorful" on-tap="fcsSendCommand" id="fcs-ctl-{{motor}}-reset-submit">RESET</paper-button>
 			</div>
 		</div>
 
@@ -497,7 +497,7 @@ paper-icon-button {
 				},
 			},
 			fcsSendCommand: function() {
-				fcs.sendCommand({motor:this.motor, name:"reset"});
+				fcs.sendReset({motor:this.motor, name:"reset"});
 			},
 		});
 	</script>

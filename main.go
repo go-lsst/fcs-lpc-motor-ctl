@@ -539,6 +539,23 @@ cmdLoop:
 	retry:
 		params := make([]m702.Parameter, 1)
 		switch req.Name {
+		case cmdReqReset:
+			dbgPrintf("cmd-req-reset:\n")
+			params = append([]m702.Parameter{},
+				newParameter(bench.ParamMotorReset),
+				newParameter(bench.ParamMotorReset),
+				newParameter(bench.ParamMotorReset),
+				newParameter(bench.ParamCmdReady),
+				newParameter(bench.ParamCmdReady),
+				newParameter(bench.ParamCmdReady),
+			)
+			codec.PutUint32(params[0].Data[:], 0)
+			codec.PutUint32(params[1].Data[:], 1)
+			codec.PutUint32(params[2].Data[:], 0)
+			codec.PutUint32(params[3].Data[:], 1)
+			codec.PutUint32(params[4].Data[:], 0)
+			codec.PutUint32(params[5].Data[:], 1)
+
 		case cmdReqReady:
 			dbgPrintf("cmd-req-ready: %v\n", uint32(req.Value))
 			params[0] = newParameter(bench.ParamCmdReady)
@@ -684,6 +701,7 @@ type cmdReply struct {
 
 // list of all possible and known command-request names
 const (
+	cmdReqReset      = "reset"
 	cmdReqFindHome   = "find-home"
 	cmdReqPos        = "pos"
 	cmdReqReady      = "ready"

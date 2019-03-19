@@ -93,6 +93,20 @@ fcs.sendCommand = function(event) {
 	fcs.chan.cmds.send(JSON.stringify(data));
 }
 
+fcs.sendReset = function(event) {
+	// console.log("sending command... (sender="+event.sender+")");
+	var motor = event.motor;
+	var data = {
+		motor: motor,
+		type: "ctl",
+		token: fcs.token,
+		name: event.name,
+	};
+	// console.log("sending command: "+JSON.stringify(data));
+
+	fcs.chan.cmds.send(JSON.stringify(data));
+}
+
 fcs.refreshMon = function(data) {
 	var plots = ["temperature", "position", "rpms"];
 	var histos = data.histos;
