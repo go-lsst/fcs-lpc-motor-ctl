@@ -97,6 +97,19 @@ class Client(object):
         i = v.find("=")
         return v[i+1:]
 
+    def _get(self, motor, cmd):
+        data = json.dumps({"motor":motor})
+        self.hdlr.request("GET", cmd, data, self.hdr)
+        resp = self.hdlr.getresponse()
+        v = resp.read()
+        if self.verbose:
+            print("response: %r" % (v,))
+            print("response: %s" % (json.loads(v),))
+        v = json.loads(v)
+        if resp.status != 200:
+            raise RuntimeError("invalid status: %s -- error: %s" % (resp.status,v["error"]))
+        return float(v["value"])
+
     pass # class Client
 
 class Motor(object):
@@ -106,6 +119,9 @@ class Motor(object):
 
     def _run(self, cmd):
         return self.cli._run(cmd)
+
+    def _get(self, cmd):
+        return self.cli._get(self.name, cmd)
 
     def sleep(self, secs):
         """sleep puts the motor in sleep mode for the provided amount
@@ -125,7 +141,7 @@ class Motor(object):
         get_angle returns the floating point value of the testbench
         position in degrees.
         """
-        return int(self._run({"motor":self.name, "cmds":self.name+"-angle-pos"}))
+        return self._get("/api/cmd/req-get-angle-pos")
 
     angle = property(get_angle, set_angle)
 

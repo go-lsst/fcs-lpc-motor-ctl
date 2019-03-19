@@ -235,6 +235,60 @@ func (srv *server) apiCmdReqRPMHandler(w http.ResponseWriter, r *http.Request) {
 	srv.apiOK(w, http.StatusOK)
 }
 
+func (srv *server) apiCmdReqGetAnglePosHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		srv.apiError(w, errInvalidHTTPMethod, http.StatusMethodNotAllowed)
+		return
+	}
+	defer r.Body.Close()
+
+	var req cmdRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		srv.apiError(w, fmt.Errorf("error decoding JSON request: %v", err), http.StatusBadRequest)
+		return
+	}
+	req.tstamp = time.Now().UTC()
+	req.Type = "ctl"
+
+	m, ok := srv.apiCheck(req, w, r)
+	if !ok {
+		return
+	}
+
+	p := newParameter(bench.ParamReadPos)
+	err = srv.apiRun(func() error { return m.Motor().ReadParam(&p) })
+	if err != nil {
+		srv.apiError(w, fmt.Errorf("error sending reset request to motor-%v: %v", m.name, err), http.StatusInternalServerError)
+		return
+	}
+
+	angle := float64(int32(codec.Uint32(p.Data[:]))) * 0.1
+
+	var resp = struct {
+		Err   string  `json:"error,omitempty"`
+		Code  int     `json:"code"`
+		Value float64 `json:"value"`
+	}{
+		Err:   "",
+		Code:  http.StatusOK,
+		Value: angle,
+	}
+
+	var buf bytes.Buffer
+	err = json.NewEncoder(&buf).Encode(resp)
+	if err != nil {
+		srv.apiError(w, fmt.Errorf("could not encode angle-pos to JSON: %v", err), http.StatusInternalServerError)
+		return
+	}
+	_, err = io.Copy(w, &buf)
+	if err != nil {
+		srv.apiError(w, fmt.Errorf("error writing JSON response: %v", err), http.StatusInternalServerError)
+		return
+	}
+	srv.apiOK(w, http.StatusOK)
+}
+
 func (srv *server) apiCmdReqAnglePosHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		srv.apiError(w, errInvalidHTTPMethod, http.StatusMethodNotAllowed)

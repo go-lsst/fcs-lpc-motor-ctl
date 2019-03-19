@@ -99,6 +99,11 @@ func main() {
 			acl:  true,
 		},
 		{
+			name: "/api/cmd/req-get-angle-pos",
+			h:    srv.apiCmdReqGetAnglePosHandler,
+			acl:  true,
+		},
+		{
 			name: "/api/cmd/req-angle-pos",
 			h:    srv.apiCmdReqAnglePosHandler,
 			acl:  true,
