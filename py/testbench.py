@@ -214,7 +214,10 @@ class Motor(object):
         return self.infos()["online"]
 
     def is_ready(self):
-        return self.status() == "ready"
+        infos = self.infos()
+        ready = infos["status"] == "ready"
+        sync = infos["sync"]
+        return ready and sync
 
     def status(self):
         return self.infos()["status"]
