@@ -15,7 +15,7 @@ const (
 	ParamCmdReady       = "0.08.015"
 	ParamHome           = "2.02.017"
 	ParamModePos        = "2.02.011"
-	ParamRPMs           = "0.20.022"
+	ParamRPMs           = "3.70.064"
 	ParamWritePos       = "3.70.000"
 	ParamReadPos        = "0.18.002"
 	ParamTemp0          = "0.07.004"
