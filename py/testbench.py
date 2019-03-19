@@ -74,6 +74,10 @@ class Client(object):
         self.x.reset()
         self.z.reset()
 
+    def stop(self):
+        self.x.stop()
+        self.z.stop()
+
     def _run(self, data):
         data =json.dumps(data)
         if self.verbose:
@@ -147,6 +151,19 @@ class Motor(object):
     def reset(self):
         data = json.dumps({"motor":self.name})
         self.cli.hdlr.request("POST", "/api/cmd/req-reset", data, self.cli.hdr)
+        resp = self.cli.hdlr.getresponse()
+        v = resp.read()
+        if self.cli.verbose:
+            print("response: %r" % (v,))
+            print("response: %s" % (json.loads(v),))
+        v = json.loads(v)
+        if resp.status != 200:
+            raise RuntimeError("invalid status: %s -- error: %s" % (resp.status,v["error"]))
+        return v
+
+    def stop(self):
+        data = json.dumps({"motor":self.name})
+        self.cli.hdlr.request("POST", "/api/cmd/req-stop", data, self.cli.hdr)
         resp = self.cli.hdlr.getresponse()
         v = resp.read()
         if self.cli.verbose:

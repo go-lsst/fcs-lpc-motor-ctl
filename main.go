@@ -123,6 +123,11 @@ func main() {
 			h:    srv.apiCmdReqResetHandler,
 			acl:  true,
 		},
+		{
+			name: "/api/cmd/req-stop",
+			h:    srv.apiCmdReqStopHandler,
+			acl:  true,
+		},
 	} {
 		mux.HandleFunc(v.name, srv.apiAuthenticated(v.h, v.acl))
 	}

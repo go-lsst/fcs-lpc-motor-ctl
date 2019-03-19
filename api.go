@@ -483,6 +483,46 @@ func (srv *server) apiCmdReqResetHandler(w http.ResponseWriter, r *http.Request)
 	srv.apiOK(w, http.StatusOK)
 }
 
+func (srv *server) apiCmdReqStopHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		srv.apiError(w, errInvalidHTTPMethod, http.StatusMethodNotAllowed)
+		return
+	}
+	defer r.Body.Close()
+
+	var req cmdRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		srv.apiError(w, fmt.Errorf("error decoding JSON request: %v", err), http.StatusBadRequest)
+		return
+	}
+	req.tstamp = time.Now().UTC()
+	req.Type = "ctl"
+
+	m, ok := srv.apiCheck(req, w, r)
+	if !ok {
+		return
+	}
+
+	ps := append([]m702.Parameter{},
+		newParameter(bench.ParamModePos),
+		newParameter(bench.ParamHome),
+		newParameter(bench.ParamCmdReady),
+	)
+	codec.PutUint32(ps[0].Data[:], 0)
+	codec.PutUint32(ps[1].Data[:], 0)
+	codec.PutUint32(ps[2].Data[:], 0)
+
+	for _, p := range ps {
+		err = srv.apiRun(func() error { return m.Motor().WriteParam(p) })
+		if err != nil {
+			srv.apiError(w, fmt.Errorf("error sending reset request to motor-%v: %v", m.name, err), http.StatusInternalServerError)
+			return
+		}
+	}
+	srv.apiOK(w, http.StatusOK)
+}
+
 func (srv *server) apiOK(w http.ResponseWriter, code int) {
 	http.Error(w, fmt.Sprintf(`{"code":%v}`, code), code)
 }
