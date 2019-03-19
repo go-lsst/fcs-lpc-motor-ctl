@@ -149,8 +149,30 @@ func (m *motor) fsm() string {
 		return "scan"
 	case 4:
 		return "run"
+	case 5:
+		return "supply loss"
+	case 6:
+		return "deceleration"
+	case 7:
+		return "dc injection"
+	case 8:
+		return "position"
 	case 9:
 		return "trip"
+	case 10:
+		return "active"
+	case 11:
+		return "off"
+	case 12:
+		return "hand"
+	case 13:
+		return "auto"
+	case 14:
+		return "heat"
+	case 15:
+		return "under voltage"
+	case 16:
+		return "phasing"
 	}
 	return fmt.Sprintf("fsm=%d", v)
 }
