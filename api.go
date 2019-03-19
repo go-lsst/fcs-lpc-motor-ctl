@@ -81,7 +81,7 @@ func (srv *server) apiCmdReqReadyHandler(w http.ResponseWriter, r *http.Request)
 
 	p := newParameter(bench.ParamCmdReady)
 	codec.PutUint32(p.Data[:], uint32(req.Value))
-	err = m.Motor().WriteParam(p)
+	err = srv.apiRun(func() error { return m.Motor().WriteParam(p) })
 	if err != nil {
 		srv.apiError(w, fmt.Errorf("error writing parameter %v to motor-%v: %v", p, m.name, err), http.StatusInternalServerError)
 		return
@@ -123,7 +123,7 @@ func (srv *server) apiCmdReqFindHomeHandler(w http.ResponseWriter, r *http.Reque
 	codec.PutUint32(params[3].Data[:], 1)
 
 	for _, p := range params {
-		err = m.Motor().WriteParam(p)
+		err = srv.apiRun(func() error { return m.Motor().WriteParam(p) })
 		if err != nil {
 			srv.apiError(w, fmt.Errorf("error writing parameter %v to motor-%v: %v", p, m.name, err), http.StatusInternalServerError)
 			return
@@ -167,7 +167,7 @@ func (srv *server) apiCmdReqPosHandler(w http.ResponseWriter, r *http.Request) {
 	codec.PutUint32(params[3].Data[:], 1)
 
 	for _, p := range params {
-		err = m.Motor().WriteParam(p)
+		err = srv.apiRun(func() error { return m.Motor().WriteParam(p) })
 		if err != nil {
 			srv.apiError(w, fmt.Errorf("error writing parameter %v to motor-%v: %v", p, m.name, err), http.StatusInternalServerError)
 			return
@@ -209,7 +209,7 @@ func (srv *server) apiCmdReqRPMHandler(w http.ResponseWriter, r *http.Request) {
 
 	p := newParameter(bench.ParamRPMs)
 	codec.PutUint32(p.Data[:], uint32(req.Value))
-	err = m.Motor().WriteParam(p)
+	err = srv.apiRun(func() error { return m.Motor().WriteParam(p) })
 	if err != nil {
 		srv.apiError(w, fmt.Errorf("error writing parameter %v to motor-%v: %v", p, m.name, err), http.StatusInternalServerError)
 		return
@@ -250,7 +250,7 @@ func (srv *server) apiCmdReqAnglePosHandler(w http.ResponseWriter, r *http.Reque
 
 	p := newParameter(bench.ParamWritePos)
 	codec.PutUint32(p.Data[:], uint32(req.Value))
-	err = m.Motor().WriteParam(p)
+	err = srv.apiRun(func() error { return m.Motor().WriteParam(p) })
 	if err != nil {
 		srv.apiError(w, fmt.Errorf("error writing parameter %v to motor-%v: %v", p, m.name, err), http.StatusInternalServerError)
 		return
@@ -283,7 +283,7 @@ func (srv *server) apiCmdReqUploadCmdsHandler(w http.ResponseWriter, r *http.Req
 	buf := new(bytes.Buffer)
 	script := newScripter(srv, m.Motor())
 	cmds := bytes.NewReader([]byte(req.Cmds))
-	err = script.run(m.Motor(), cmds, buf)
+	err = srv.apiRun(func() error { return script.run(m.Motor(), cmds, buf) })
 	if err != nil {
 		srv.apiError(w, fmt.Errorf("error running script: %v", err), http.StatusInternalServerError)
 		return
@@ -350,7 +350,7 @@ func (srv *server) apiCmdReqUploadScriptHandler(w http.ResponseWriter, r *http.R
 	buf := new(bytes.Buffer)
 	script := newScripter(srv, m.Motor())
 	cmds := bytes.NewReader([]byte(req.Cmds))
-	err = script.run(m.Motor(), cmds, buf)
+	err = srv.apiRun(func() error { return script.run(m.Motor(), cmds, buf) })
 	if err != nil {
 		srv.apiError(w, fmt.Errorf("error running script: %v", err), http.StatusInternalServerError)
 		return
@@ -452,4 +452,16 @@ func (srv *server) apiAuthenticated(h func(w http.ResponseWriter, r *http.Reques
 		h(w, r)
 		return
 	}
+}
+
+func (srv *server) apiRun(f func() error) error {
+	const retries = 10
+	var err error
+	for i := 0; i < retries; i++ {
+		err = f()
+		if err != nil {
+			continue
+		}
+	}
+	return err
 }
