@@ -200,6 +200,8 @@ func newServer(addr string) *server {
 	default:
 		ip := "134.158.155.16"
 		srv.motor.x = newMotor("x", ip+":5021") // master-x
+		slave := newMotorSlave("x", ip+":5022") // slave-x
+		srv.motor.x.slave = &slave
 		srv.motor.z = newMotor("z", ip+":5023") // master-z
 		if *webcamFlag {
 			srv.webcam = ip + ":80"

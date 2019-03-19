@@ -39,6 +39,8 @@ type motor struct {
 	histos motorHistos
 	online bool // whether motors are online/connected
 
+	slave *motor // nil if no master/slave
+
 	mu sync.RWMutex // see motor.updateAnglePos
 }
 
@@ -63,6 +65,42 @@ func (m *motor) poll() []error {
 		&m.params.ModePos,
 		&m.params.RPMs,
 		&m.params.ReadAngle,
+		&m.params.Temps[0],
+		&m.params.Temps[1],
+		&m.params.Temps[2],
+		&m.params.Temps[3],
+	} {
+		var err error
+	retry:
+		for i := 0; i < 10; i++ {
+			err = mm.ReadParam(p)
+			if err == nil {
+				break retry
+			}
+		}
+		if err != nil {
+			errs = append(errs, fmt.Errorf("error reading %v (motor-%s) Pr-%v: %v\n", m.addr, m.name, *p, err))
+		}
+	}
+	if m.slave != nil {
+		slave := m.slave.pollSlave()
+		if len(slave) > 0 {
+			errs = append(errs, slave...)
+		}
+	}
+	return errs
+}
+
+func (m *motor) pollSlave() []error {
+	var errs []error
+	mm := m.Motor()
+	for _, p := range []*m702.Parameter{
+		&m.params.Manual,
+		&m.params.CmdReady,
+		&m.params.MotorStatus,
+		&m.params.MotorReady,
+		&m.params.MotorActive,
+		&m.params.HWSafety,
 		&m.params.Temps[0],
 		&m.params.Temps[1],
 		&m.params.Temps[2],
@@ -152,6 +190,13 @@ func (m *motor) updateAnglePos() error {
 func (m *motor) reset() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
+	if m.slave != nil {
+		err := m.slave.reset()
+		if err != nil {
+			return err
+		}
+	}
 
 	mm := m702.New(m.addr)
 	ps := append([]m702.Parameter{},
@@ -285,6 +330,17 @@ func newMotor(name, addr string) motor {
 	}
 }
 
+func newMotorSlave(name, addr string) motor {
+	return motor{
+		name:   name + "-slave",
+		addr:   addr,
+		params: newMotorSlaveParams(),
+		histos: motorHistos{
+			rows: make([]monData, 0, 128),
+		},
+	}
+}
+
 func newMotorMock(name, addr string) motor {
 	m := newMotor(name, addr)
 	m.mock = true
@@ -319,6 +375,23 @@ func newMotorParams() motorParams {
 		RPMs:        newParameter(bench.ParamRPMs),
 		WriteAngle:  newParameter(bench.ParamWritePos),
 		ReadAngle:   newParameter(bench.ParamReadPos),
+		Temps: [4]m702.Parameter{
+			newParameter(bench.ParamTemp0),
+			newParameter(bench.ParamTemp1),
+			newParameter(bench.ParamTemp2),
+			newParameter(bench.ParamTemp3),
+		},
+	}
+}
+
+func newMotorSlaveParams() motorParams {
+	return motorParams{
+		Manual:      newParameter(bench.ParamManualOverride),
+		CmdReady:    newParameter(bench.ParamCmdReady),
+		MotorStatus: newParameter(bench.ParamMotorStatus),
+		MotorReady:  newParameter(bench.ParamMotorStatusReady),
+		MotorActive: newParameter(bench.ParamMotorStatusActive),
+		HWSafety:    newParameter(bench.ParamHWSafety),
 		Temps: [4]m702.Parameter{
 			newParameter(bench.ParamTemp0),
 			newParameter(bench.ParamTemp1),
