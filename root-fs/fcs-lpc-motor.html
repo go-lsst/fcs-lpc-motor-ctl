@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!-- Copyright 2016 The go-lsst Authors. All rights reserved.
-  -- Use of this source code is governed by a BSD-style
-  -- license that can be found in the LICENSE file.
-  -->
+	-- Use of this source code is governed by a BSD-style
+	-- license that can be found in the LICENSE file.
+-->
 
 <link rel="import" href="bower_components/polymer/polymer.html">
 
@@ -33,14 +33,14 @@
 <dom-module id="fcs-lpc-motor-login">
 	<template>
 		<style>
-    :host {
-      display: block;
-      box-sizing: border-box;
-      text-align: center;
-      margin: 5px;
-      max-width: 250px;
-      min-width: 200px;
-    }
+:host {
+	display: block;
+	box-sizing: border-box;
+	text-align: center;
+	margin: 5px;
+	max-width: 250px;
+	min-width: 200px;
+}
 	button.no-style {
 		-webkit-appearance: none;
 		border: 0;
@@ -58,35 +58,35 @@
 	</template>
 
 	<script>
-	Polymer({
-		is:"fcs-lpc-motor-login",
-		fcs_submit_login: function(event) {
-			console.log("fcs_handle_login: "+event);
-			var form = document.getElementById("form");
-			console.log("form: "+form+" -- method: ["+form.method+"] -- action=["+form.action+"]");
-			form.method = "post";
-			form.action = "/login";
-			console.log(" -->> method: ["+form.method+"] -- action=["+form.action+"]");
-			form.submit();
-			//return fcs.handleLogin(event);
-		},
-		passwordValidationPattern: ".*?",
-		passwordErrorMessage: "booo",
-	});
+		Polymer({
+			is:"fcs-lpc-motor-login",
+			fcs_submit_login: function(event) {
+				console.log("fcs_handle_login: "+event);
+				var form = document.getElementById("form");
+				console.log("form: "+form+" -- method: ["+form.method+"] -- action=["+form.action+"]");
+				form.method = "post";
+				form.action = "/login";
+				console.log(" -->> method: ["+form.method+"] -- action=["+form.action+"]");
+				form.submit();
+				//return fcs.handleLogin(event);
+			},
+			passwordValidationPattern: ".*?",
+			passwordErrorMessage: "booo",
+		});
 	</script>
 </dom-module>
 
 <dom-module id="fcs-lpc-motor-logout">
 	<template>
 		<style>
-    :host {
-      display: block;
-      box-sizing: border-box;
-      text-align: center;
-      margin: 5px;
-      max-width: 250px;
-      min-width: 200px;
-    }
+:host {
+	display: block;
+	box-sizing: border-box;
+	text-align: center;
+	margin: 5px;
+	max-width: 250px;
+	min-width: 200px;
+}
 	button.no-style {
 		-webkit-appearance: none;
 		border: 0;
@@ -108,22 +108,22 @@
 	</template>
 
 	<script>
-	Polymer({
-		is:"fcs-lpc-motor-logout",
-	});
+		Polymer({
+			is:"fcs-lpc-motor-logout",
+		});
 	</script>
 </dom-module>
 
 
 <dom-module id="fcs-lpc-motor-app">
 	<style is="custom-style">
-		:host {
-			width: 100%;
-			height: 100%;
-			margin: 0 auto;
-			box-sizing: border-box;
-			@apply(--layout-horizontal);
-		}
+:host {
+	width: 100%;
+	height: 100%;
+	margin: 0 auto;
+	box-sizing: border-box;
+	@apply(--layout-horizontal);
+}
 
 		body {
 			padding: 40px;
@@ -168,15 +168,15 @@
 		}
 
 		/*
-		.vertical-section {
-			margin: 0 24px 24px 24px;
-		}
+			 .vertical-section {
+				 margin: 0 24px 24px 24px;
+			 }
 
-		.vertical-section-container {
-			@apply(--layout-vertical);
-			@apply(--center-justified);
-		}
-		*/
+			 .vertical-section-container {
+				 @apply(--layout-vertical);
+				 @apply(--center-justified);
+			 }
+		 */
 
 	</style>
 
@@ -215,9 +215,9 @@
 									<fcs-motors-ctl motor="x"></fcs-motors-ctl>
 									<fcs-motors-ctl motor="z"></fcs-motors-ctl>
 									<!--
-									<fcs-motors-scripting></fcs-motors-scripting>
+					 <fcs-motors-scripting></fcs-motors-scripting>
 									-->
-									</div>
+								</div>
 								<br>
 								<div class="layout horizontal center-center">
 									<fcs-motors-monitor motor="x"></fcs-motors-monitor>
@@ -240,23 +240,23 @@
 	</template>
 
 	<script>
-	Polymer({
-		is:"fcs-lpc-motor-app",
-		properties: {
-			selected: {type: Number, value: 0},
-		},
-		ready: function(event) {
-			var user = document.getElementById("fcs-user");
-			user.innerHTML = fcs.user;
-		},
-	});
+		Polymer({
+			is:"fcs-lpc-motor-app",
+			properties: {
+				selected: {type: Number, value: 0},
+			},
+			ready: function(event) {
+				var user = document.getElementById("fcs-user");
+				user.innerHTML = fcs.user;
+			},
+		});
 	</script>
 
 </dom-module>
 
 <dom-module id="fcs-motors-status">
 
-<style is="custom-style">
+	<style is="custom-style">
 paper-button.green {
 	background-color: var(--paper-red-500);
 	color: white;
@@ -276,72 +276,72 @@ paper-card {
 th {
 	font-weight: normal;
 }
-</style>
+	</style>
 
-<template>
-	<paper-card heading="FCS Motors Status" elevation="2">
-		<div class="card-content">
-			<table>
-				<thead>
-					<tr><th></th>
-						<th>Motor-X</th>
-						<th>Motor-Z</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr><th style="text-align:left">Conn</th>
-						<th><paper-button id="fcs-status-x-online" toggles disabled raised class="fcs-switch green">N/A</paper-button></th>
-						<th><paper-button id="fcs-status-z-online" toggles disabled raised class="fcs-switch green">N/A</paper-button></th>
-					</tr>
-					<tr><th style="text-align:left">Status</th>
-						<th><paper-button id="fcs-status-x-ready" toggles disabled raised class="fcs-switch green">N/A</paper-button></th>
-						<th><paper-button id="fcs-status-z-ready" toggles disabled raised class="fcs-switch green">N/A</paper-button></th>
-					</tr>
-					<tr><th style="text-align:left">Mode</th>
-						<th><paper-button id="fcs-status-x-mode" toggles disabled raised class="fcs-switch green">N/A</paper-button></th>
-						<th><paper-button id="fcs-status-z-mode" toggles disabled raised class="fcs-switch green">N/A</paper-button></th>
-					</tr>
-					<tr><th style="text-align:left">RPMs</th>
-						<th><paper-button id="fcs-status-x-rpms" raised disabled class="left-align">N/A</paper-button></th>
-						<th><paper-button id="fcs-status-z-rpms" raised disabled class="left-align">N/A</paper-button></th>
-					</tr>
-					<tr><th style="text-align:left">Position</th>
-						<th><paper-button id="fcs-status-x-angle" raised disabled class="left-align">N/A</paper-button></th>
-						<th><paper-button id="fcs-status-z-angle" raised disabled class="left-align">N/A</paper-button></th>
-					</tr>
-					<tr><th style="text-align:left">T (°C)</th>
-						<th><paper-button id="fcs-status-x-temp-0" raised disabled suffix="C" class="left-align">N/A</paper-button></th>
-						<th><paper-button id="fcs-status-z-temp-0" raised disabled suffix="C" class="left-align">N/A</paper-button></th>
-					</tr>
-					<tr><th style="text-align:left">T (°C)</th>
-						<th><paper-button id="fcs-status-x-temp-1" raised disabled suffix="C" class="left-align">N/A</paper-button></th>
-						<th><paper-button id="fcs-status-z-temp-1" raised disabled suffix="C" class="left-align">N/A</paper-button></th>
-					</tr>
-					<tr><th style="text-align:left">T (°C)</th>
-						<th><paper-button id="fcs-status-x-temp-2" raised disabled suffix="C" class="left-align">N/A</paper-button></th>
-						<th><paper-button id="fcs-status-z-temp-2" raised disabled suffix="C" class="left-align">N/A</paper-button></th>
-					</tr>
-					<tr><th style="text-align:left">T (°C)</th>
-						<th><paper-button id="fcs-status-x-temp-3" raised disabled suffix="C" class="left-align">N/A</paper-button></th>
-						<th><paper-button id="fcs-status-z-temp-3" raised disabled suffix="C" class="left-align">N/A</paper-button></th>
-					</tr>
-				</tbody>
-			</table>
-			<br>
-			Last status update:<br>
-			<span id="fcs-status-update">N/A<span>
-		</div>
-	</paper-card>
-</template>
+	<template>
+		<paper-card heading="FCS Motors Status" elevation="2">
+			<div class="card-content">
+				<table>
+					<thead>
+						<tr><th></th>
+							<th>Motor-X</th>
+							<th>Motor-Z</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr><th style="text-align:left">Conn</th>
+							<th><paper-button id="fcs-status-x-online" toggles disabled raised class="fcs-switch green">N/A</paper-button></th>
+							<th><paper-button id="fcs-status-z-online" toggles disabled raised class="fcs-switch green">N/A</paper-button></th>
+						</tr>
+						<tr><th style="text-align:left">Status</th>
+							<th><paper-button id="fcs-status-x-ready" toggles disabled raised class="fcs-switch green">N/A</paper-button></th>
+							<th><paper-button id="fcs-status-z-ready" toggles disabled raised class="fcs-switch green">N/A</paper-button></th>
+						</tr>
+						<tr><th style="text-align:left">Mode</th>
+							<th><paper-button id="fcs-status-x-mode" toggles disabled raised class="fcs-switch green">N/A</paper-button></th>
+							<th><paper-button id="fcs-status-z-mode" toggles disabled raised class="fcs-switch green">N/A</paper-button></th>
+						</tr>
+						<tr><th style="text-align:left">RPMs</th>
+							<th><paper-button id="fcs-status-x-rpms" raised disabled class="left-align">N/A</paper-button></th>
+							<th><paper-button id="fcs-status-z-rpms" raised disabled class="left-align">N/A</paper-button></th>
+						</tr>
+						<tr><th style="text-align:left">Position</th>
+							<th><paper-button id="fcs-status-x-angle" raised disabled class="left-align">N/A</paper-button></th>
+							<th><paper-button id="fcs-status-z-angle" raised disabled class="left-align">N/A</paper-button></th>
+						</tr>
+						<tr><th style="text-align:left">T (°C)</th>
+							<th><paper-button id="fcs-status-x-temp-0" raised disabled suffix="C" class="left-align">N/A</paper-button></th>
+							<th><paper-button id="fcs-status-z-temp-0" raised disabled suffix="C" class="left-align">N/A</paper-button></th>
+						</tr>
+						<tr><th style="text-align:left">T (°C)</th>
+							<th><paper-button id="fcs-status-x-temp-1" raised disabled suffix="C" class="left-align">N/A</paper-button></th>
+							<th><paper-button id="fcs-status-z-temp-1" raised disabled suffix="C" class="left-align">N/A</paper-button></th>
+						</tr>
+						<tr><th style="text-align:left">T (°C)</th>
+							<th><paper-button id="fcs-status-x-temp-2" raised disabled suffix="C" class="left-align">N/A</paper-button></th>
+							<th><paper-button id="fcs-status-z-temp-2" raised disabled suffix="C" class="left-align">N/A</paper-button></th>
+						</tr>
+						<tr><th style="text-align:left">T (°C)</th>
+							<th><paper-button id="fcs-status-x-temp-3" raised disabled suffix="C" class="left-align">N/A</paper-button></th>
+							<th><paper-button id="fcs-status-z-temp-3" raised disabled suffix="C" class="left-align">N/A</paper-button></th>
+						</tr>
+					</tbody>
+				</table>
+				<br>
+				Last status update:<br>
+				<span id="fcs-status-update">N/A<span>
+			</div>
+		</paper-card>
+	</template>
 
-<script>
-Polymer({
-	is:"fcs-motors-status",
-	properties: {
-		motor: String
-	},
-});
-</script>
+	<script>
+		Polymer({
+			is:"fcs-motors-status",
+			properties: {
+				motor: String
+			},
+		});
+	</script>
 
 </dom-module>
 
@@ -378,10 +378,10 @@ paper-button.fcs-switch {
 		background-color: var(--paper-pink-a200);
 		color: white !important;
 	};
-	--paper-button-raised-keyboard-focus: {
-		background-color: var(--paper-pink-a200) !important;
-		color: white !important;
-	};
+--paper-button-raised-keyboard-focus: {
+	background-color: var(--paper-pink-a200) !important;
+	color: white !important;
+};
 }
 
 paper-icon-button {
@@ -400,27 +400,27 @@ paper-icon-button {
 
 	</template>
 	<script>
-Polymer({
-	is: "fcs-button-cmd",
-	properties: {
-		motor: String,
-		cmd:   String,
-		disabled: {
-			type: Boolean,
-			value: false,
-		},
-		raised: {
-			type: Boolean,
-			value: false,
-		},
-		value: Number,
-		min: Number,
-		max: Number,
-	},
-	fcsSendCommand: function() {
-		fcs.sendCommand({motor:this.motor, name:this.cmd});
-	},
-});
+		Polymer({
+			is: "fcs-button-cmd",
+			properties: {
+				motor: String,
+				cmd:   String,
+				disabled: {
+					type: Boolean,
+					value: false,
+				},
+				raised: {
+					type: Boolean,
+					value: false,
+				},
+				value: Number,
+				min: Number,
+				max: Number,
+			},
+			fcsSendCommand: function() {
+				fcs.sendCommand({motor:this.motor, name:this.cmd});
+			},
+		});
 	</script>
 
 </dom-module>
@@ -454,10 +454,10 @@ paper-button.fcs-switch {
 		background-color: var(--paper-pink-a200);
 		color: white !important;
 	};
-	--paper-button-raised-keyboard-focus: {
-		background-color: var(--paper-pink-a200) !important;
-		color: white !important;
-	};
+--paper-button-raised-keyboard-focus: {
+	background-color: var(--paper-pink-a200) !important;
+	color: white !important;
+};
 }
 
 paper-icon-button {
@@ -474,23 +474,23 @@ paper-icon-button {
 
 	</template>
 	<script>
-Polymer({
-	is: "fcs-button-script",
-	properties: {
-		motor:  String,
-		title:  String,
-		cmd:    String,
-	},
-	fcsSendCommand: function() {
-		var cmd = {
-			motor: this.motor,
-			type: "ctl",
-			token: fcs.token,
-			name:  this.cmd,
-		};
-		fcs.chan.cmds.send(JSON.stringify(cmd));
-	},
-});
+		Polymer({
+			is: "fcs-button-script",
+			properties: {
+				motor:  String,
+				title:  String,
+				cmd:    String,
+			},
+			fcsSendCommand: function() {
+				var cmd = {
+					motor: this.motor,
+					type: "ctl",
+					token: fcs.token,
+					name:  this.cmd,
+				};
+				fcs.chan.cmds.send(JSON.stringify(cmd));
+			},
+		});
 	</script>
 
 </dom-module>
@@ -524,22 +524,22 @@ paper-card {
 				</table>
 				<br>
 				<!--
-				<fcs-button-cmd id="fcs-ctl-{{motor}}-ready" raised motor="{{motor}}" cmd="ready" value="0" min="0" max="+1" title="Motor-{{motor}} ready"></fcs-button-cmd>
-				<br>
+			<fcs-button-cmd id="fcs-ctl-{{motor}}-ready" raised motor="{{motor}}" cmd="ready" value="0" min="0" max="+1" title="Motor-{{motor}} ready"></fcs-button-cmd>
+			<br>
 				-->
-				<fcs-button-cmd id="fcs-ctl-{{motor}}-rpm" disabled motor="{{motor}}" cmd="rpm" value="0" min="0" max="3000" title="RPMs"></fcs-button-cmd>
+				<fcs-button-cmd id="fcs-ctl-{{motor}}-rpm" disabled motor="{{motor}}" cmd="rpm" value="0" min="0" max="2200" title="RPMs"></fcs-button-cmd>
 				<fcs-button-cmd id="fcs-ctl-{{motor}}-angle-position" disabled motor="{{motor}}" cmd="angle-position" value="0" min="-90" max="+90" title="Position (degrees)"></fcs-button-cmd>
 			</div>
 		</paper-card>
 	</template>
 
 	<script>
-Polymer({
-	is: "fcs-motors-ctl",
-	properties: {
-		motor: String
-	},
-});
+		Polymer({
+			is: "fcs-motors-ctl",
+			properties: {
+				motor: String
+			},
+		});
 	</script>
 
 </dom-module>
@@ -564,8 +564,8 @@ paper-button[raised].colorful {
 }
 
 input {
-      width: 100%;
-      box-sizing: border-box;
+	width: 100%;
+	box-sizing: border-box;
 }
 
 paper-input {
@@ -594,8 +594,8 @@ textarea {
 					<h4>Input Script File</h4>
 					<form id="fcs-upload-script-file-form">
 						<div class="center layout horizontal">
-						<input type="file" id="fileInput" name="upload-file" size=20></input>
-						<paper-button raised class="colorful" on-click="_submit">Submit</paper-button>
+							<input type="file" id="fileInput" name="upload-file" size=20></input>
+							<paper-button raised class="colorful" on-click="_submit">Submit</paper-button>
 						</div>
 					</form>
 				</div>
@@ -613,16 +613,16 @@ textarea {
 	</template>
 
 	<script>
-Polymer({
-	is: "fcs-motors-scripting",
-	properties: {
-		token: {type: String, value: ""},
-	},
-	_submit: function() {
-		var elem = this.$.fileInput;
-		fcs.uploadScriptFile(elem.files.item(0));
-	},
-});
+		Polymer({
+			is: "fcs-motors-scripting",
+			properties: {
+				token: {type: String, value: ""},
+			},
+			_submit: function() {
+				var elem = this.$.fileInput;
+				fcs.uploadScriptFile(elem.files.item(0));
+			},
+		});
 	</script>
 </dom-module>
 
@@ -632,8 +632,8 @@ Polymer({
 -->
 
 <dom-module id="fcs-motors-alert">
-	<template>
-		<style>
+<template>
+<style>
 paper-dialog {
 	width: 50%;
 	border: 2px solid;
@@ -641,24 +641,24 @@ paper-dialog {
 	background-color: var(--paper-light-red-50);
 	color: var(--paper-red-500);
 }
-		</style>
-		<paper-dialog id="fcs-motors-errors"></paper-dialog>
-	</template>
-	<script>
-Polymer({
-	is: "fcs-motors-alert",
-	properties: {
-		token: {type: String, value: ""},
-	},
-	displayError: function(obj) {
-		var req = JSON.stringify(obj.req);
-		var err = obj.err;
-		var node = document.querySelector('#fcs-motors-errors');
-		node.innerHTML = "<h2>Error</h2><div>"+err+"</div><br><br><h2>Request</h2><div>"+req+"</div>";
-		node.open();
-	},
-});
-	</script>
+</style>
+<paper-dialog id="fcs-motors-errors"></paper-dialog>
+</template>
+<script>
+	Polymer({
+		is: "fcs-motors-alert",
+		properties: {
+			token: {type: String, value: ""},
+		},
+		displayError: function(obj) {
+			var req = JSON.stringify(obj.req);
+			var err = obj.err;
+			var node = document.querySelector('#fcs-motors-errors');
+			node.innerHTML = "<h2>Error</h2><div>"+err+"</div><br><br><h2>Request</h2><div>"+req+"</div>";
+			node.open();
+		},
+	});
+</script>
 </dom-module>
 
 <!--+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -711,12 +711,12 @@ paper-button[raised].colorful {
 	</template>
 
 	<script>
-Polymer({
-	is: "fcs-motors-monitor",
-	properties: {
-		motor: String
-	},
-});
+		Polymer({
+			is: "fcs-motors-monitor",
+			properties: {
+				motor: String
+			},
+		});
 
 window.onload = function() {
 }
@@ -762,9 +762,9 @@ flot-chart {
 	</template>
 
 	<script>
-Polymer({
-	is: "fcs-motors-webcam",
-});
+		Polymer({
+			is: "fcs-motors-webcam",
+		});
 
 window.onload = function() {
 }

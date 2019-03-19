@@ -210,7 +210,7 @@ func (srv *server) apiCmdReqRPMHandler(w http.ResponseWriter, r *http.Request) {
 	req.tstamp = time.Now().UTC()
 	req.Type = "ctl"
 
-	if req.Value > 3000 {
+	if req.Value > 2200 {
 		srv.apiError(w, fmt.Errorf("invalid RPM value (%v > 3000)", req.Value), http.StatusBadRequest)
 		return
 	}
