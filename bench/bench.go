@@ -43,6 +43,9 @@ const (
 
 	ParamMotorStatus = "0.60"  // overall motor status (copied from 10.101)
 	ParamMotorReset  = "10.33" // 0 -> 1
+
+	ParamFwdLimitSwitch = "6.35" // forward limit marker
+	ParamBwdLimitSwitch = "6.36" // backward limit marker
 )
 
 var (
