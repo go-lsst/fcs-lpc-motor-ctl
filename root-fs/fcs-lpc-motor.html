@@ -332,7 +332,11 @@ th {
 				</table>
 				<br>
 				Last status update:<br>
-				<span id="fcs-status-update">N/A<span>
+				<span id="fcs-status-update">N/A</span>
+				<br>
+				<span>---</span>
+				<br>
+				<paper-button id="fcs-motor-stop" raised class="fcs-switch green">STOP</paper-button>
 			</div>
 		</paper-card>
 	</template>
@@ -422,6 +426,78 @@ paper-icon-button {
 			},
 			fcsSendCommand: function() {
 				fcs.sendCommand({motor:this.motor, name:this.cmd});
+			},
+		});
+	</script>
+
+</dom-module>
+
+<dom-module id="fcs-button-reset">
+	<template>
+		<style is="custom-style">
+paper-slider {
+	--paper-slider-input: {
+		width: 100px;
+	};
+}
+
+paper-button {
+	height: 41.375px;
+}
+
+paper-button[raised].colorful {
+	background-color: var(--paper-red-500);
+	color: #fff;
+	height: 41.375px;
+}
+
+paper-icon-button {
+	--paper-icon-button-ink-color: white;
+}
+
+paper-button.fcs-switch {
+	--paper-button-ink-color: var(--paper-pink-a200);
+	--paper-button-flat-keyboard-focus: {
+		background-color: var(--paper-pink-a200);
+		color: white !important;
+	};
+--paper-button-raised-keyboard-focus: {
+	background-color: var(--paper-pink-a200) !important;
+	color: white !important;
+};
+}
+
+paper-icon-button {
+	--paper-icon-button-ink-color: white;
+}
+
+		</style>
+
+		<div>
+			<div>{{title}}</div>
+			<div class="layout horizontal">
+				<paper-button raised="[[raised]]" disabled="[[disabled]]" class="colorful" on-tap="fcsSendCommand" id="fcs-ctl-{{motor}}-{{cmd}}-submit">RESET</paper-button>
+			</div>
+		</div>
+
+	</template>
+	<script>
+		Polymer({
+			is: "fcs-button-reset",
+			properties: {
+				motor: String,
+				cmd:   String,
+				disabled: {
+					type: Boolean,
+					value: false,
+				},
+				raised: {
+					type: Boolean,
+					value: false,
+				},
+			},
+			fcsSendCommand: function() {
+				fcs.sendCommand({motor:this.motor, name:"reset"});
 			},
 		});
 	</script>
@@ -532,6 +608,10 @@ paper-card {
 				-->
 				<fcs-button-cmd id="fcs-ctl-{{motor}}-rpm" disabled motor="{{motor}}" cmd="rpm" value="0" min="0" max="2200" title="RPMs"></fcs-button-cmd>
 				<fcs-button-cmd id="fcs-ctl-{{motor}}-angle-position" disabled motor="{{motor}}" cmd="angle-position" value="0" min="-90" max="+90" title="Position (degrees)"></fcs-button-cmd>
+				<br>
+				<div>
+					<fcs-button-reset id="fcs-ctl-{{motor}}-reset" enabled motor="{{motor}}" cmd="reset" class="center" raised></fcs-button-reset>
+				</div>
 			</div>
 		</paper-card>
 	</template>
@@ -566,29 +646,36 @@ paper-button[raised].colorful {
 	color: #fff;
 }
 
-input {
-	width: 100%;
-	box-sizing: border-box;
+paper-button.red {
+	height: 41.375px;
+	width:  80px;
+	background-color: var(--paper-red-500);
+	color: white;
 }
 
-paper-input {
-	display: inline-block;
-	box-sizing: border-box;
-}
+	input {
+		width: 100%;
+		box-sizing: border-box;
+	}
 
-paper-textarea {
-	box-sizing: border-box;
-	border: 1px solid #eee;
-}
+	paper-input {
+		display: inline-block;
+		box-sizing: border-box;
+	}
 
-iron-autogrow-textarea {
-	width: 200px;
-	box-sizing: border-box;
-}
+	paper-textarea {
+		box-sizing: border-box;
+		border: 1px solid #eee;
+	}
 
-textarea {
-	border:1px solid #eee;
-}
+	iron-autogrow-textarea {
+		width: 200px;
+		box-sizing: border-box;
+	}
+
+	textarea {
+		border:1px solid #eee;
+	}
 		</style>
 
 		<paper-card heading="FCS Motors Scripting" elevation="2">

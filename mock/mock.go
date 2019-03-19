@@ -27,6 +27,7 @@ type Motor struct {
 	state struct {
 		Manual     uint32
 		CmdReady   uint32
+		FSM        uint32
 		HWSafety   uint32
 		Home       uint32
 		ModePos    uint32
@@ -49,6 +50,7 @@ func (m *Motor) run() {
 		case <-hwsafety:
 			m.setHWSafety(1)
 		case <-ticker.C:
+			m.state.FSM = 4
 			m.genTemp()
 		}
 	}
@@ -107,6 +109,12 @@ func (m *Motor) ReadParam(p *m702.Parameter) error {
 		codec.PutUint32(p.Data[:], uint32(m.state.Temps[2]))
 	case newParameter(bench.ParamTemp3).Index:
 		codec.PutUint32(p.Data[:], uint32(m.state.Temps[3]))
+	case newParameter(bench.ParamMotorStatus).Index:
+		codec.PutUint32(p.Data[:], m.state.FSM)
+	case newParameter(bench.ParamMotorStatusReady).Index:
+		codec.PutUint32(p.Data[:], 1)
+	case newParameter(bench.ParamMotorStatusActive).Index:
+		codec.PutUint32(p.Data[:], 1)
 	default:
 		panic("invalid parameter: " + p.String())
 	}
