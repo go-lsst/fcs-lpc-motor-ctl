@@ -7,7 +7,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,6 +14,7 @@ import (
 
 	"github.com/go-lsst/fcs-lpc-motor-ctl/bench"
 	"github.com/go-lsst/ncs/drivers/m702"
+	"github.com/pkg/errors"
 )
 
 var (
@@ -107,6 +107,23 @@ func (srv *server) apiCmdReqFindHomeHandler(w http.ResponseWriter, r *http.Reque
 
 	m, ok := srv.apiCheck(req, w, r)
 	if !ok {
+		return
+	}
+	switch m.name {
+	case "x":
+		if m.angle() > 0 {
+			err := errors.New("motor in wrong quadrant. find-home would fail")
+			srv.apiError(w, err, http.StatusBadRequest)
+			return
+		}
+	case "z":
+		if m.angle() < 0 {
+			err := errors.New("motor in wrong quadrant. find-home would fail")
+			srv.apiError(w, err, http.StatusBadRequest)
+			return
+		}
+	default:
+		srv.apiError(w, errors.Errorf("invalid motor name %q", m.name), http.StatusBadRequest)
 		return
 	}
 
