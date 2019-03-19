@@ -146,6 +146,7 @@ func (m *motor) reset() error {
 			return errors.Wrapf(err, "motor %q: could not send reset", m.name)
 		}
 	}
+
 	return nil
 }
 

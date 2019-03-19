@@ -118,6 +118,11 @@ func main() {
 			h:    srv.apiCmdReqUploadScriptHandler,
 			acl:  true,
 		},
+		{
+			name: "/api/cmd/req-reset",
+			h:    srv.apiCmdReqResetHandler,
+			acl:  true,
+		},
 	} {
 		mux.HandleFunc(v.name, srv.apiAuthenticated(v.h, v.acl))
 	}
