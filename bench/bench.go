@@ -41,7 +41,8 @@ const (
 
 	ParamPositionReached = "0.19.033" // position: 0=no, 1=reached
 
-	ParamMotorStatus = "0.60" // overall motor status (copied from 10.101)
+	ParamMotorStatus = "0.60"  // overall motor status (copied from 10.101)
+	ParamMotorReset  = "10.33" // 0 -> 1
 )
 
 var (
