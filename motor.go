@@ -71,14 +71,7 @@ func (m *motor) poll() []error {
 		&m.params.Temps[2],
 		&m.params.Temps[3],
 	} {
-		var err error
-	retry:
-		for i := 0; i < 10; i++ {
-			err = mm.ReadParam(p)
-			if err == nil {
-				break retry
-			}
-		}
+		err := m.retry(func() error { return mm.ReadParam(p) })
 		if err != nil {
 			errs = append(errs, fmt.Errorf("error reading %v (motor-%s) Pr-%v: %v\n", m.addr, m.name, *p, err))
 		}
@@ -107,14 +100,7 @@ func (m *motor) pollSlave() []error {
 		&m.params.Temps[2],
 		&m.params.Temps[3],
 	} {
-		var err error
-	retry:
-		for i := 0; i < 10; i++ {
-			err = mm.ReadParam(p)
-			if err == nil {
-				break retry
-			}
-		}
+		err := m.retry(func() error { return mm.ReadParam(p) })
 		if err != nil {
 			errs = append(errs, fmt.Errorf("error reading %v (motor-%s) Pr-%v: %v\n", m.addr, m.name, *p, err))
 		}
