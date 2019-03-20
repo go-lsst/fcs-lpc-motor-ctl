@@ -336,6 +336,51 @@ func (m *motor) stop() error {
 	return nil
 }
 
+func (m *motor) findHome() error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	mm := m702.New(m.addr)
+
+	err := m.retry(func() error { return mm.ReadParam(&m.params.ReadAngle) })
+	if err != nil {
+		return errors.Wrapf(err, "motor %q: could not read position before find-home", m.name)
+	}
+
+	switch m.name {
+	case "x":
+		if m.angle() > 0 {
+			return bench.ErrInvalidQuadrant
+		}
+	case "z":
+		if m.angle() < 0 {
+			return bench.ErrInvalidQuadrant
+		}
+	default:
+		return bench.ErrInvalidMotorName
+	}
+
+	ps := append([]m702.Parameter{},
+		newParameter(bench.ParamCmdReady),
+		newParameter(bench.ParamModePos),
+		newParameter(bench.ParamHome),
+		newParameter(bench.ParamCmdReady),
+	)
+	codec.PutUint32(ps[0].Data[:], 0)
+	codec.PutUint32(ps[1].Data[:], 0)
+	codec.PutUint32(ps[2].Data[:], 1)
+	codec.PutUint32(ps[3].Data[:], 1)
+
+	for _, p := range ps {
+		err := m.retry(func() error { return mm.WriteParam(p) })
+		if err != nil {
+			return errors.Wrapf(err, "motor %q: could not send reset", m.name)
+		}
+	}
+
+	return nil
+}
+
 func (m *motor) infos(timeout time.Duration) (infos bench.MotorInfos, err error) {
 	online, err := m.isOnline(timeout)
 	if err != nil {

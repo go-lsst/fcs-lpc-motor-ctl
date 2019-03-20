@@ -583,17 +583,13 @@ cmdLoop:
 
 		case cmdReqFindHome:
 			dbgPrintf("cmd-req-find-home\n")
-			params = append([]m702.Parameter{},
-				newParameter(bench.ParamCmdReady),
-				newParameter(bench.ParamModePos),
-				newParameter(bench.ParamHome),
-				newParameter(bench.ParamCmdReady),
-			)
-
-			codec.PutUint32(params[0].Data[:], 0)
-			codec.PutUint32(params[1].Data[:], 0)
-			codec.PutUint32(params[2].Data[:], 1)
-			codec.PutUint32(params[3].Data[:], 1)
+			err := srvMotor.findHome()
+			reply := cmdReply{Req: req}
+			if err != nil {
+				reply.Err = err.Error()
+			}
+			srv.sendReply(c.ws, reply)
+			continue
 
 		case cmdReqPos:
 			dbgPrintf("cmd-req-pos\n")

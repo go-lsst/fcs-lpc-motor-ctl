@@ -55,6 +55,7 @@ var (
 	ErrOpNotSupported   = FcsError{20, "fcs: operation not supported"}
 	ErrInvalidReq       = FcsError{102, "fcs: invalid request"}
 	ErrInvalidMotorName = FcsError{200, "fcs: invalid motor name"}
+	ErrInvalidQuadrant  = FcsError{300, "fcs: invalid quadrant for find-home"}
 )
 
 type FcsError struct {
