@@ -263,6 +263,76 @@ func (m *motor) reset() error {
 		}
 	}
 
+	pos := newParameter(bench.ParamReadPos)
+	err := m.retry(func() error { return mm.ReadParam(&pos) })
+	if err != nil {
+		return errors.Wrapf(err, "motor %q: could not read position during reset", m.name)
+	}
+
+	wpos := newParameter(bench.ParamWritePos)
+	codec.PutUint32(wpos.Data[:], codec.Uint32(pos.Data[:]))
+	err = m.retry(func() error { return mm.WriteParam(wpos) })
+	if err != nil {
+		return errors.Wrapf(err, "motor %q: could not update position during reset", m.name)
+	}
+
+	err = m.retry(func() error { return mm.ReadParam(&pos) })
+	if err != nil {
+		return errors.Wrapf(err, "motor %q: could not read position during reset", m.name)
+	}
+
+	return nil
+}
+
+func (m *motor) stop() error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	mm := m702.New(m.addr)
+
+	ps := append([]m702.Parameter{},
+		newParameter(bench.ParamModePos),
+		newParameter(bench.ParamHome),
+		newParameter(bench.ParamCmdReady),
+	)
+	codec.PutUint32(ps[0].Data[:], 0)
+	codec.PutUint32(ps[1].Data[:], 0)
+	codec.PutUint32(ps[2].Data[:], 0)
+
+	for _, p := range ps {
+		err := m.retry(func() error { return mm.WriteParam(p) })
+		if err != nil {
+			return errors.Wrapf(err, "motor %q: could not send reset", m.name)
+		}
+	}
+
+	go func() {
+		m.mu.Lock()
+		defer m.mu.Unlock()
+
+		time.Sleep(2 * time.Second)
+
+		pos := newParameter(bench.ParamReadPos)
+		err := m.retry(func() error { return mm.ReadParam(&pos) })
+		if err != nil {
+			log.Printf("motor %q: could not read position during reset: %v", m.name, err)
+			return
+		}
+
+		wpos := newParameter(bench.ParamWritePos)
+		codec.PutUint32(wpos.Data[:], codec.Uint32(pos.Data[:]))
+		err = m.retry(func() error { return mm.WriteParam(wpos) })
+		if err != nil {
+			log.Printf("motor %q: could not update position during reset: %v", m.name, err)
+			return
+		}
+
+		err = m.retry(func() error { return mm.ReadParam(&pos) })
+		if err != nil {
+			log.Printf("motor %q: could not read position during reset: %v", m.name, err)
+		}
+	}()
+
 	return nil
 }
 

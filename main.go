@@ -559,31 +559,22 @@ cmdLoop:
 		switch req.Name {
 		case cmdReqStop:
 			dbgPrintf("cmd-req-stop:\n")
-			params = append([]m702.Parameter{},
-				newParameter(bench.ParamModePos),
-				newParameter(bench.ParamHome),
-				newParameter(bench.ParamCmdReady),
-			)
-			codec.PutUint32(params[0].Data[:], 0)
-			codec.PutUint32(params[1].Data[:], 0)
-			codec.PutUint32(params[2].Data[:], 0)
+			err := srvMotor.stop()
+			reply := cmdReply{Req: req}
+			if err != nil {
+				reply.Err = err.Error()
+			}
+			srv.sendReply(c.ws, reply)
 
 		case cmdReqReset:
 			dbgPrintf("cmd-req-reset:\n")
-			params = append([]m702.Parameter{},
-				newParameter(bench.ParamMotorReset),
-				newParameter(bench.ParamMotorReset),
-				newParameter(bench.ParamMotorReset),
-				newParameter(bench.ParamCmdReady),
-				newParameter(bench.ParamCmdReady),
-				newParameter(bench.ParamCmdReady),
-			)
-			codec.PutUint32(params[0].Data[:], 0)
-			codec.PutUint32(params[1].Data[:], 1)
-			codec.PutUint32(params[2].Data[:], 0)
-			codec.PutUint32(params[3].Data[:], 1)
-			codec.PutUint32(params[4].Data[:], 0)
-			codec.PutUint32(params[5].Data[:], 1)
+			err := srvMotor.reset()
+			reply := cmdReply{Req: req}
+			if err != nil {
+				reply.Err = err.Error()
+			}
+			srv.sendReply(c.ws, reply)
+			continue
 
 		case cmdReqReady:
 			dbgPrintf("cmd-req-ready: %v\n", uint32(req.Value))

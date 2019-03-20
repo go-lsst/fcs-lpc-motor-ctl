@@ -623,21 +623,10 @@ func (srv *server) apiCmdReqStopHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	ps := append([]m702.Parameter{},
-		newParameter(bench.ParamModePos),
-		newParameter(bench.ParamHome),
-		newParameter(bench.ParamCmdReady),
-	)
-	codec.PutUint32(ps[0].Data[:], 0)
-	codec.PutUint32(ps[1].Data[:], 0)
-	codec.PutUint32(ps[2].Data[:], 0)
-
-	for _, p := range ps {
-		err = srv.apiRun(func() error { return m.Motor().WriteParam(p) })
-		if err != nil {
-			srv.apiError(w, fmt.Errorf("error sending reset request to motor-%v: %v", m.name, err), http.StatusInternalServerError)
-			return
-		}
+	err = srv.apiRun(m.stop)
+	if err != nil {
+		srv.apiError(w, fmt.Errorf("error sending reset request to motor-%v: %v", m.name, err), http.StatusInternalServerError)
+		return
 	}
 	srv.apiOK(w, http.StatusOK)
 }
