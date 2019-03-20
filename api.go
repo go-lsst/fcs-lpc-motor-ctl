@@ -309,7 +309,6 @@ func (srv *server) apiCmdReqGetAnglePosHandler(w http.ResponseWriter, r *http.Re
 		srv.apiError(w, fmt.Errorf("error writing JSON response: %v", err), http.StatusInternalServerError)
 		return
 	}
-	srv.apiOK(w, http.StatusOK)
 }
 
 func (srv *server) apiCmdReqAnglePosHandler(w http.ResponseWriter, r *http.Request) {
