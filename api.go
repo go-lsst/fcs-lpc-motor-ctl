@@ -109,42 +109,11 @@ func (srv *server) apiCmdReqFindHomeHandler(w http.ResponseWriter, r *http.Reque
 	if !ok {
 		return
 	}
-	switch m.name {
-	case "x":
-		if m.angle() > 0 {
-			err := errors.New("motor in wrong quadrant. find-home would fail")
-			srv.apiError(w, err, http.StatusBadRequest)
-			return
-		}
-	case "z":
-		if m.angle() < 0 {
-			err := errors.New("motor in wrong quadrant. find-home would fail")
-			srv.apiError(w, err, http.StatusBadRequest)
-			return
-		}
-	default:
-		srv.apiError(w, errors.Errorf("invalid motor name %q", m.name), http.StatusBadRequest)
+
+	err = m.findHome()
+	if err != nil {
+		srv.apiError(w, errors.Wrap(err, "api: find-home failed"), http.StatusInternalServerError)
 		return
-	}
-
-	params := append([]m702.Parameter{},
-		newParameter(bench.ParamCmdReady),
-		newParameter(bench.ParamModePos),
-		newParameter(bench.ParamHome),
-		newParameter(bench.ParamCmdReady),
-	)
-
-	codec.PutUint32(params[0].Data[:], 0)
-	codec.PutUint32(params[1].Data[:], 0)
-	codec.PutUint32(params[2].Data[:], 1)
-	codec.PutUint32(params[3].Data[:], 1)
-
-	for _, p := range params {
-		err = srv.apiRun(func() error { return m.Motor().WriteParam(p) })
-		if err != nil {
-			srv.apiError(w, fmt.Errorf("error writing parameter %v to motor-%v: %v", p, m.name, err), http.StatusInternalServerError)
-			return
-		}
 	}
 
 	srv.apiOK(w, http.StatusOK)
@@ -594,7 +563,7 @@ func (srv *server) apiCmdReqResetHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	err = srv.apiRun(func() error { return m.reset() })
+	err = srv.apiRun(m.reset)
 	if err != nil {
 		srv.apiError(w, fmt.Errorf("error sending reset request to motor-%v: %v", m.name, err), http.StatusInternalServerError)
 		return
