@@ -5,22 +5,39 @@
 # Use of this source code is governed by a BSD-style
 # license that can be found in the LICENSE file.
 
-import base64
+from __future__ import division, print_function, unicode_literals
+
 import json
-import httplib
+import base64
+try:
+    import httplib
+except ImportError:
+    import http.client as httplib
+
+from time import sleep
+
 
 class Client(object):
-    def __init__(self, user="", pwd="", addr="", timeout=10, verbose=False):
+    def __init__(self, user, pwd, addr, timeout=10, verbose=False):
         self.usr = user
         self.pwd = pwd
         self.addr = addr
         self.verbose = verbose
 
         self.hdlr = httplib.HTTPConnection(addr, timeout=timeout)
-        auth = base64.encodestring(user+':'+pwd).replace("\n","")
+
+        auth_str = "{}:{}".format(user, pwd)
+        try:
+            # Python 2
+            auth = base64.encodestring(auth_str).strip()
+        except TypeError:
+            # Python 3
+            auth = base64.encodebytes(auth_str.encode())
+            auth = auth.decode().strip()
+
         self.hdr = {
-            "Content-Type":  "application/json",
-            "Authorization": "Basic "+auth,
+            "Content-Type": "application/json",
+            "Authorization": "Basic " + auth,
         }
 
         self.x = Motor(self, "x")
@@ -29,35 +46,62 @@ class Client(object):
         print("connecting to {}...".format(addr))
         self._connect(timeout)
         print("connecting to {}... [done]".format(addr))
-
-    def _connect(self, timeout):
-        import time
-        for i in range(timeout):
-            self.hdlr.request("GET", "/api/mon", None, self.hdr)
-            resp = self.hdlr.getresponse()
-            v = resp.read()
-            if self.verbose:
-                print("response: %r" % (v,))
-                print("response: %s" % (json.loads(v),))
-            v = json.loads(v)
-            if resp.status == httplib.OK:
-                return
-            time.sleep(1)
-            pass
-        raise RuntimeError("could not establish connection to {} after {}s".format(self.addr, timeout))
-
-
-    def infos(self):
+    
+    def _request_info(self):
         self.hdlr.request("GET", "/api/mon", None, self.hdr)
         resp = self.hdlr.getresponse()
-        v = resp.read()
+        response = resp.read()
         if self.verbose:
-            print("response: %r" % (v,))
-            print("response: %s" % (json.loads(v),))
-        v = json.loads(v)
-        if resp.status != 200:
-            raise RuntimeError("invalid status: %s -- error: %s" % (resp.status,v["error"]))
-        return v["infos"]
+            print("response: {!r}".format(response))
+
+        resp_dict = json.loads(response)
+
+        if resp.status != httplib.OK:
+            raise RuntimeError(
+                "invalid status: {} -- error: {}".format(resp.status, resp_dict["error"])
+            )
+        return resp_dict
+
+    def _request_action(self, method, action, data):
+        if isinstance(data, dict):
+            data = json.dumps(data)
+        if self.verbose:
+            print("request-data: {!r}".format(data))
+            print("request-cmd: {!r}".format(action))
+
+        self.hdlr.request(method, "/api/cmd/{}".format(action), data, self.hdr)
+        resp = self.hdlr.getresponse()
+
+        response = resp.read()
+        resp_dict = json.loads(response)
+
+        if self.verbose:
+            print("response: {!r}".format(response))
+
+        if resp.status != httplib.OK:
+            raise RuntimeError(
+                "invalid status: {} -- error: {}".format(resp.status, resp_dict["error"])
+            )
+
+        return resp_dict
+
+    def _connect(self, timeout):
+        for _ in range(timeout):
+            try:
+                self._request_info()
+                break
+            except RuntimeError:
+                sleep(1)
+                continue
+        else:
+            raise RuntimeError(
+                "could not establish connection to {} after {}s".format(self.addr, timeout)
+            )
+
+    def infos(self):
+        resp_dict = self._request_info()
+        
+        return resp_dict["infos"]
 
     def is_online(self):
         infos = self.infos()
@@ -69,7 +113,7 @@ class Client(object):
     def wait(self):
         self.x.wait()
         self.z.wait()
-
+    
     def reset(self):
         self.x.reset()
         self.z.reset()
@@ -78,39 +122,6 @@ class Client(object):
         self.x.stop()
         self.z.stop()
 
-    def _run(self, data):
-        data =json.dumps(data)
-        if self.verbose:
-            print("request-data: '%s'" % (data,))
-        self.hdlr.request("POST", "/api/cmd/req-upload-cmds", data, self.hdr)
-        resp = self.hdlr.getresponse()
-        v = resp.read()
-        if self.verbose:
-            print("response: %r" % (v,))
-            print("response: %s" % (json.loads(v),))
-        v = json.loads(v)
-        if resp.status != 200:
-            raise RuntimeError("invalid status: %s -- error: %s" % (resp.status,v["error"]))
-        v = v["script"].replace("\n","")
-        if not "=" in v:
-            return
-        i = v.find("=")
-        return v[i+1:]
-
-    def _get(self, motor, cmd):
-        data = json.dumps({"motor":motor})
-        self.hdlr.request("GET", cmd, data, self.hdr)
-        resp = self.hdlr.getresponse()
-        v = resp.read()
-        if self.verbose:
-            print("response: %r" % (v,))
-            print("response: %s" % (json.loads(v),))
-        v = json.loads(v)
-        if resp.status != 200:
-            raise RuntimeError("invalid status: %s -- error: %s" % (resp.status,v["error"]))
-        return float(v["value"])
-
-    pass # class Client
 
 class Motor(object):
     def __init__(self, cli, name):
@@ -118,38 +129,61 @@ class Motor(object):
         self.name = name
 
     def _run(self, cmd):
-        return self.cli._run(cmd)
-
+        resp_dict = self.cli._request_action(
+            method="POST",
+            action="req-upload-cmds",
+            data={"motor": self.name, "cmds": cmd},
+        )
+        result = resp_dict["script"].split("=")
+        
+        if len(result) != 2:
+            return
+        
+        return result[-1].strip()
+    
     def _get(self, cmd):
-        return self.cli._get(self.name, cmd)
+        return self.cli._request_action(
+            method="GET",
+            action=cmd,
+            data={"motor": self.name},
+        )
 
     def sleep(self, secs):
         """sleep puts the motor in sleep mode for the provided amount
         of seconds.
         """
-        self._run({"motor":self.name, "cmds":"sleep %ss" % (secs,)})
+        self._run(
+            "sleep {}s".format(secs)
+        )
 
     def set_angle(self, pos):
         """
         set_angle takes a floating point value indicating the new
         angle position the testbench should go to.
         """
-        self._run({"motor":self.name, "cmds":self.name+"-angle-pos %s" % (int(pos),)})
+        self._run(
+            "{}-angle-pos {:d}".format(self.name, pos)
+        )
+        self.wait()
 
     def get_angle(self):
         """
         get_angle returns the floating point value of the testbench
         position in degrees.
         """
-        return self._get("/api/cmd/req-get-angle-pos")
+        res_dict = self._get("req-get-angle-pos")
+        return float(res_dict["value"])
 
     angle = property(get_angle, set_angle)
 
     def set_mode(self, mode):
         want = ("find-home", "pos")
         if not mode in want:
-            raise RuntimeError("invalid mode %s (want: %s)" % (mode, want))
-        self._run({"motor":self.name, "cmds":self.name+"-"+mode})
+            raise RuntimeError("invalid mode {} (want: {})".format(mode, want))
+
+        self._run(
+            "{}-{}".format(self.name, mode)
+        )
 
     def get_mode(self):
         return self.infos()["mode"]
@@ -157,67 +191,50 @@ class Motor(object):
     mode = property(get_mode, set_mode)
 
     def set_rpm(self, rpm):
-        self._run({"motor":self.name, "cmds":self.name+"-rpm %s" % (int(rpm),)})
+        self._run(
+            "{}-rpm {:d}".format(self.name, rpm)
+        )
 
     def get_rpm(self):
-        return int(self._get("/api/cmd/req-get-rpm"))
+        res_dict = self._get("req-get-rpm")
+        return int(res_dict["value"])
 
     rpm = property(get_rpm, set_rpm)
 
     def reset(self):
-        data = json.dumps({"motor":self.name})
-        self.cli.hdlr.request("POST", "/api/cmd/req-reset", data, self.cli.hdr)
-        resp = self.cli.hdlr.getresponse()
-        v = resp.read()
-        if self.cli.verbose:
-            print("response: %r" % (v,))
-            print("response: %s" % (json.loads(v),))
-        v = json.loads(v)
-        if resp.status != 200:
-            raise RuntimeError("invalid status: %s -- error: %s" % (resp.status,v["error"]))
-        return v
-
+        self.cli._request_action(
+            method="POST", 
+            action="req-reset", 
+            data={"motor": self.name},
+        )
+        
     def stop(self):
-        data = json.dumps({"motor":self.name})
-        self.cli.hdlr.request("POST", "/api/cmd/req-stop", data, self.cli.hdr)
-        resp = self.cli.hdlr.getresponse()
-        v = resp.read()
-        if self.cli.verbose:
-            print("response: %r" % (v,))
-            print("response: %s" % (json.loads(v),))
-        v = json.loads(v)
-        if resp.status != 200:
-            raise RuntimeError("invalid status: %s -- error: %s" % (resp.status,v["error"]))
-        return v
+        self.cli._request_action(
+            method="POST", 
+            action="req-stop",
+            data={"motor": self.name},
+        )
 
     def wait(self):
-        data = json.dumps({"motor":self.name})
-        self.cli.hdlr.request("GET", "/api/cmd/req-wait-pos", data, self.cli.hdr)
-        resp = self.cli.hdlr.getresponse()
-        v = resp.read()
-        if self.cli.verbose:
-            print("response: %r" % (v,))
-            print("response: %s" % (json.loads(v),))
-        v = json.loads(v)
-        if resp.status != 200:
-            raise RuntimeError("invalid status: %s -- error: %s" % (resp.status,v["error"]))
-        return v
+        self.cli._request_action(
+            method="GET", 
+            action="req-wait-pos",
+            data={"motor": self.name},
+        )
 
     def infos(self):
-        infos = self.cli.infos()
-        for info in infos:
+        for info in self.cli.infos():
             if info["motor"] == self.name:
                 return info
-        raise RuntimeError("no infos for motor %s" % (self.name,))
+
+        raise RuntimeError("No infos for motor {}".format(self.name))
 
     def is_online(self):
         return self.infos()["online"]
 
     def is_ready(self):
-        infos = self.infos()
-        ready = infos["status"] == "ready"
-        sync = infos["sync"]
-        return ready and sync
+        ready = self.status() == "ready"
+        return ready and self.is_sync()
 
     def status(self):
         return self.infos()["status"]
@@ -225,4 +242,5 @@ class Motor(object):
     def temps(self):
         return self.infos()["temps"]
 
-    pass # class Motor
+    def is_sync(self):
+        return self.infos()["sync"]
