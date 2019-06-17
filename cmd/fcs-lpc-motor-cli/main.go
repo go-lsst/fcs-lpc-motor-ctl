@@ -173,6 +173,8 @@ func runMon(usr, pwd, addr string) {
 		log.Printf("--- motor %v ---", info.Motor)
 		log.Printf(" online:  %v", info.Online)
 		log.Printf(" status:  %v", info.Status)
+		log.Printf(" FSM:     %v", info.FSM)
+		log.Printf(" sync:    %v", info.Sync)
 		log.Printf(" mode:    %v", info.Mode)
 		log.Printf(" RPMs:    %v", info.RPMs)
 		log.Printf(" angle:   %v", info.Angle)
