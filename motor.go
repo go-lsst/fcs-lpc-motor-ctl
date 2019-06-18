@@ -40,7 +40,8 @@ type motor struct {
 	histos motorHistos
 	online bool // whether motors are online/connected
 
-	slave *motor // nil if no master/slave
+	slave  *motor // nil if no master/slave
+	master *motor
 
 	mu sync.RWMutex // see motor.updateAnglePos
 }
@@ -107,6 +108,8 @@ func (m *motor) pollSlave() []error {
 	}
 	return errs
 }
+
+func (m *motor) isSlave() bool { return m.master != nil }
 
 func (m *motor) isOnline(timeout time.Duration) (bool, error) {
 	if m.mock {
@@ -269,11 +272,13 @@ func (m *motor) reset() error {
 		return errors.Wrapf(err, "motor %q: could not read position during reset", m.name)
 	}
 
-	wpos := newParameter(bench.ParamWritePos)
-	codec.PutUint32(wpos.Data[:], codec.Uint32(pos.Data[:]))
-	err = m.retry(func() error { return mm.WriteParam(wpos) })
-	if err != nil {
-		return errors.Wrapf(err, "motor %q: could not update position during reset", m.name)
+	if !m.isSlave() {
+		wpos := newParameter(bench.ParamWritePos)
+		codec.PutUint32(wpos.Data[:], codec.Uint32(pos.Data[:]))
+		err = m.retry(func() error { return mm.WriteParam(wpos) })
+		if err != nil {
+			return errors.Wrapf(err, "motor %q: could not update position during reset", m.name)
+		}
 	}
 
 	err = m.retry(func() error { return mm.ReadParam(&pos) })
@@ -490,7 +495,7 @@ func newMotor(name, addr string) motor {
 	}
 }
 
-func newMotorSlave(name, addr string) motor {
+func newMotorSlave(name, addr string, master *motor) motor {
 	return motor{
 		name:   name + "-slave",
 		addr:   addr,
@@ -498,6 +503,7 @@ func newMotorSlave(name, addr string) motor {
 		histos: motorHistos{
 			rows: make([]monData, 0, 128),
 		},
+		master: master,
 	}
 }
 

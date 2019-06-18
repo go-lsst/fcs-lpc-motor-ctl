@@ -199,13 +199,13 @@ func newServer(addr string) *server {
 
 	switch {
 	case *mockFlag:
-		srv.motor.x = newMotorMock("x", "127.0.0.1:5020") // master-x
-		slave := newMotorSlave("x", "127.0.0.1:5022")     // slave-x
+		srv.motor.x = newMotorMock("x", "127.0.0.1:5020")           // master-x
+		slave := newMotorSlave("x", "127.0.0.1:5022", &srv.motor.x) // slave-x
 		srv.motor.x.slave = &slave
 		srv.motor.z = newMotorMock("z", "127.0.0.1:5021") // master-z
 	case *localFlag:
-		srv.motor.x = newMotor("x", "192.168.0.21:502") // master-x
-		slave := newMotorSlave("x", "192.168.0.22:502") // slave-x
+		srv.motor.x = newMotor("x", "192.168.0.21:502")               // master-x
+		slave := newMotorSlave("x", "192.168.0.22:502", &srv.motor.x) // slave-x
 		srv.motor.x.slave = &slave
 		srv.motor.z = newMotor("z", "192.168.0.23:502") // master-z
 		if *webcamFlag {
@@ -213,8 +213,8 @@ func newServer(addr string) *server {
 		}
 	default:
 		ip := "134.158.155.16"
-		srv.motor.x = newMotor("x", ip+":5021") // master-x
-		slave := newMotorSlave("x", ip+":5022") // slave-x
+		srv.motor.x = newMotor("x", ip+":5021")               // master-x
+		slave := newMotorSlave("x", ip+":5022", &srv.motor.x) // slave-x
 		srv.motor.x.slave = &slave
 		srv.motor.z = newMotor("z", ip+":5023") // master-z
 		if *webcamFlag {
