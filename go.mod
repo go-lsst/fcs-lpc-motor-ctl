@@ -10,5 +10,6 @@ require (
 	github.com/pkg/errors v0.8.1
 	go-hep.org/x/hep v0.17.1
 	golang.org/x/net v0.0.0-20190301231341-16b79f2e4e95
+	golang.org/x/sys v0.0.0-20190626221950-04f50cda93cb // indirect
 	gonum.org/v1/plot v0.0.0-20190305221528-63fb5191f538
 )
