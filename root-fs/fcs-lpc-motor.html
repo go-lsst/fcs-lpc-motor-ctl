@@ -373,6 +373,10 @@ paper-slider {
 	};
 }
 
+paper-input {
+	width: 200px;
+}
+
 paper-button {
 	height: 41.375px;
 }
@@ -408,7 +412,7 @@ paper-icon-button {
 		<div>
 			<div>{{title}}</div>
 			<div class="layout horizontal">
-				<paper-slider id="fcs-ctl-{{motor}}-{{cmd}}-slider" pin type="number" step="{{step}}" value="{{value}}" min="{{min}}" max="{{max}}" disabled="[[disabled]]" editable></paper-slider>
+				<paper-input id="fcs-ctl-{{motor}}-{{cmd}}-slider" pin type="number" step="{{step}}" value="{{value}}" min="{{min}}" max="{{max}}" disabled="[[disabled]]" editable></paper-input>
 				<paper-button raised="[[raised]]" disabled="[[disabled]]" class="colorful" on-tap="fcsSendCommand" id="fcs-ctl-{{motor}}-{{cmd}}-submit">Submit</paper-button>
 			</div>
 		</div>

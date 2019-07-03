@@ -441,7 +441,7 @@ func (srv *server) publishData() {
 			Sync:   motor.isSyncOK(),
 			Mode:   mon.Mode(),
 			RPMs:   int(mon.rpms),
-			Angle:  int(mon.angle),
+			Angle:  mon.angle,
 			Temps:  mon.temps,
 			Histos: plots,
 			Webcam: srv.fetchWebcamImage(),

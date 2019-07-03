@@ -97,7 +97,7 @@ type MotorInfos struct {
 	Sync   bool              `json:"sync"`   // master/slave synchronization
 	Mode   string            `json:"mode"`   // N/A,ready,home,position
 	RPMs   int               `json:"rpms"`
-	Angle  int               `json:"angle"`
+	Angle  float64           `json:"angle"`
 	Temps  [4]float64        `json:"temps"`
 	Histos map[string]string `json:"histos"`
 	Webcam string            `json:"webcam"`

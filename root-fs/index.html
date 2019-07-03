@@ -178,7 +178,7 @@ window.onload = function() {
 		document.getElementById("fcs-status-"+motor+"-monitor").active = monitor;
 		document.getElementById("fcs-status-"+motor+"-sync").active = data.sync;
 		document.getElementById("fcs-status-"+motor+"-rpms").innerHTML = data.rpms;
-		document.getElementById("fcs-status-"+motor+"-angle").innerHTML = data.angle + " °";
+		document.getElementById("fcs-status-"+motor+"-angle").innerHTML = data.angle.toFixed(1) + " °";
 		for (var i=0; i<data.temps.length;i++) {
 			document.getElementById("fcs-status-"+motor+"-temp-"+i).innerHTML = data.temps[i]+" °C";
 		}

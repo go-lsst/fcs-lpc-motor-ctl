@@ -465,7 +465,7 @@ func (m *motor) infos(timeout time.Duration) (infos bench.MotorInfos, err error)
 		Sync:   sync,
 		Mode:   mon.Mode(),
 		RPMs:   int(mon.rpms),
-		Angle:  int(mon.angle),
+		Angle:  mon.angle,
 		Temps:  mon.temps,
 	}
 
