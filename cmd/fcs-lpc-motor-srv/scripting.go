@@ -266,9 +266,9 @@ func (sc *Script) cmdAnglePos(m *motor, args []string, w io.Writer) (m702.Parame
 		if err != nil {
 			return p, err
 		}
-		fmt.Fprintf(w, "get-%v-angle-pos=%d\n", m.name, info.Angle)
+		fmt.Fprintf(w, "get-%v-angle-pos=%v\n", m.name, info.Angle)
 	case 1:
-		angle, err := strconv.Atoi(args[0])
+		angle, err := strconv.ParseFloat(args[0], 64)
 		if err != nil {
 			return p, err
 		}
@@ -286,7 +286,7 @@ func (sc *Script) cmdAnglePos(m *motor, args []string, w io.Writer) (m702.Parame
 		if err != nil {
 			return p, err
 		}
-		fmt.Fprintf(w, "set-%v-angle-pos=%d\n", m.name, angle)
+		fmt.Fprintf(w, "set-%v-angle-pos=%v\n", m.name, angle)
 		return p, nil
 
 	default:
